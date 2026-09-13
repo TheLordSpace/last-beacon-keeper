@@ -227,7 +227,7 @@ void Player::render(SDL_Renderer* ren, const Vec2& cameraOffset) {
 // ENEMY IMPLEMENTATION
 // ==========================================
 
-Enemy::Enemy(EnemyType type, const Vec2& pos) : m_type(type), m_pos(pos) {
+Enemy::Enemy(EnemyType type, const Vec2& pos, int waveId) : m_type(type), m_pos(pos), m_waveId(waveId) {
     switch (type) {
     case EnemyType::Crawler:
         m_health = 35.0f;
@@ -377,6 +377,8 @@ void Enemy::update(float dt, const Vec2& playerPos, const Vec2& lighthousePos,
             currentSpeed *= 0.55f; // slowed by light
         }
         m_pos += dir * currentSpeed * dt;
+        m_pos.x = std::clamp(m_pos.x, 50.0f, WORLD_WIDTH - 50.0f);
+        m_pos.y = std::clamp(m_pos.y, 50.0f, WORLD_HEIGHT - 50.0f);
     }
 }
 

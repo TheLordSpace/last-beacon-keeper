@@ -38,7 +38,7 @@ struct PlacedMirror {
 
 class Enemy {
 public:
-    Enemy(EnemyType type, const Vec2& pos);
+    Enemy(EnemyType type, const Vec2& pos, int waveId = 0);
 
     void update(float dt, const Vec2& playerPos, const Vec2& lighthousePos,
                 std::vector<PlacedMirror>& mirrors, const IslandMap& map);
@@ -54,11 +54,14 @@ public:
     float getHealth() const { return m_health; }
     float getMaxHealth() const { return m_maxHealth; }
     bool isBurning() const { return m_burnTimer > 0.0f; }
+    int getWaveId() const { return m_waveId; }
+    void setWaveId(int id) { m_waveId = id; }
 
 private:
     EnemyType m_type;
     Vec2 m_pos;
     Vec2 m_vel;
+    int m_waveId = 0;
     float m_health = 40.0f;
     float m_maxHealth = 40.0f;
     float m_speed = 90.0f;

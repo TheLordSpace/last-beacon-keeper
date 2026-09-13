@@ -9,6 +9,13 @@ DayNightManager::DayNightManager() {
     init();
 }
 
+float DayNightManager::getNightDurationForDay(int day) {
+    if (day <= 1) return 65.0f;
+    if (day == 2) return 85.0f;
+    if (day == 3) return 110.0f;
+    return 135.0f; // Day 4+: 6 waves
+}
+
 void DayNightManager::init() {
     m_dayNumber = 1;
     m_phase = DayPhase::Day;
@@ -88,7 +95,8 @@ WavePreview DayNightManager::getUpcomingWavePreview() const {
 void DayNightManager::calculateDawnReward(
     const Lighthouse& lighthouse,
     const std::vector<PlacedMirror>& mirrors,
-    Player& player
+    Player& player,
+    const IslandMap& map
 ) {
     m_lastDawnReward = DawnReward();
     m_lastDawnReward.dayNumber = m_dayNumber;
@@ -101,43 +109,43 @@ void DayNightManager::calculateDawnReward(
     m_lastDawnReward.lighthouseHpPercent = (lighthouse.getHealth() / lighthouse.getMaxHealth()) * 100.0f;
     m_lastDawnReward.fuelRemaining = lighthouse.getFuel();
 
-    // Base survival rewards
-    m_lastDawnReward.wood = 8;
-    m_lastDawnReward.crystals = 6;
-    m_lastDawnReward.oil = 12;
-    m_lastDawnReward.salves = 1;
+    // 1. Base survival reward (enough to keep moving without inflation)
+    m_lastDawnReward.wood = 6;
+    m_lastDawnReward.crystals = 5;
+    m_lastDawnReward.oil = 10;
+    m_lastDawnReward.salves = (player.salves == 0) ? 1 : 0; // Emergency salve if depleted
 
-    // Defeated enemies bonus
+    // 2. Defeated enemies bonus (capped to prevent snowballing)
     if (m_lastDawnReward.enemiesDefeated >= 8) {
-        m_lastDawnReward.wood += 4;
-        m_lastDawnReward.crystals += 3;
+        m_lastDawnReward.wood += 3;
+        m_lastDawnReward.crystals += 2;
     }
     if (m_lastDawnReward.enemiesDefeated >= 16) {
-        m_lastDawnReward.wood += 4;
-        m_lastDawnReward.crystals += 4;
-        m_lastDawnReward.oil += 6;
+        m_lastDawnReward.wood += 3;
+        m_lastDawnReward.crystals += 2;
+        m_lastDawnReward.oil += 4;
     }
 
-    // Lighthouse integrity bonus
-    if (m_lastDawnReward.lighthouseHpPercent >= 70.0f) {
-        m_lastDawnReward.wood += 4;
-        m_lastDawnReward.crystals += 4;
+    // 3. Lighthouse integrity bonus
+    if (m_lastDawnReward.lighthouseHpPercent >= 60.0f) {
+        m_lastDawnReward.wood += 3;
+        m_lastDawnReward.crystals += 3;
     }
-    if (m_lastDawnReward.lighthouseHpPercent >= 90.0f) {
-        m_lastDawnReward.relicCores += 1;
+    if (m_lastDawnReward.lighthouseHpPercent >= 85.0f) {
+        m_lastDawnReward.relicCores += 1; // Direct reward for protecting beacon!
     }
 
-    // Preserved mirrors bonus
-    int preservedBonus = std::min(5, m_lastDawnReward.mirrorsPreserved);
-    m_lastDawnReward.wood += preservedBonus * 2;
+    // 4. Preserved mirrors bonus (diminishing, capped at 4 mirrors)
+    int preservedBonus = std::min(4, m_lastDawnReward.mirrorsPreserved);
+    m_lastDawnReward.wood += preservedBonus * 1;
     m_lastDawnReward.crystals += preservedBonus * 1;
 
-    // Progression helper: from Day 3 onward, ensure at least 1 relic core is earned
-    if (m_dayNumber >= 3 && m_lastDawnReward.relicCores == 0) {
+    // 5. Altar progression helper: on Day 3 Dawn, if player has 0 altars lit and 0 cores, provide 1 core
+    if (m_dayNumber >= 3 && map.getIgnitedAltarsCount() == 0 && m_lastDawnReward.relicCores == 0 && player.relicCores == 0) {
         m_lastDawnReward.relicCores += 1;
     }
 
-    // Apply to player inventory
+    // Apply rewards to player inventory
     player.wood += m_lastDawnReward.wood;
     player.crystals += m_lastDawnReward.crystals;
     player.oil += m_lastDawnReward.oil;
@@ -166,8 +174,8 @@ void DayNightManager::transitionTo(
         m_waveManager.resetForDay(m_dayNumber);
         {
             bool isAr = Localization::instance().isArabic();
-            statusOut = isAr ? ("اليوم " + std::to_string(m_dayNumber) + ": اجمع الموارد وحصن دفاعاتك.") :
-                               ("Day " + std::to_string(m_dayNumber) + ": Gather resources and prepare defenses.");
+            statusOut = isAr ? ("اليوم " + std::to_string(m_dayNumber) + ": استكشف الجزيرة واجمع الموارد وحصن دفاعاتك.") :
+                               ("Day " + std::to_string(m_dayNumber) + ": Explore, harvest resources, and prepare defenses.");
             statusTimerOut = 5.0f;
         }
         break;
@@ -180,7 +188,7 @@ void DayNightManager::transitionTo(
         break;
 
     case DayPhase::Night:
-        m_phaseDuration = m_nightDuration;
+        m_phaseDuration = getNightDurationForDay(m_dayNumber);
         AudioManager::instance().setMusicNight(true);
         m_waveManager.startNight();
         statusOut = Localization::instance().get("MSG_NIGHT");
@@ -199,7 +207,7 @@ void DayNightManager::transitionTo(
             ParticleSystem::instance().spawnSparks(e.getPos(), 20, ColorRGBA{ 255, 240, 160, 255 });
         }
 
-        calculateDawnReward(lighthouse, mirrors, player);
+        calculateDawnReward(lighthouse, mirrors, player, map);
         m_dawnSummaryTimer = 12.0f;
         statusOut = Localization::instance().get("MSG_DAWN");
         statusTimerOut = 5.0f;
@@ -297,7 +305,8 @@ void DayNightManager::update(
 
     case DayPhase::Night:
         m_waveManager.update(dt, enemies, lighthouse.getLanternPos());
-        if (m_phaseTimer >= m_nightDuration) {
+        // Transition to dawn if all waves finished, or if phase timer reached night limit
+        if (m_waveManager.isNightFinished() || m_phaseTimer >= m_phaseDuration) {
             transitionTo(DayPhase::Dawn, lighthouse, player, mirrors, enemies, map, gameState, statusOut, statusTimerOut);
         }
         break;

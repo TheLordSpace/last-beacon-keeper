@@ -8,6 +8,7 @@ struct PendingEnemySpawn {
     EnemyType type;
     float delay;
     float angle;
+    int waveId = 0;
 };
 
 struct WavePreview {
@@ -40,6 +41,7 @@ public:
     int getTotalWaves() const { return m_totalWaves; }
     int getWavesCompleted() const { return m_wavesCompleted; }
     bool isWaveActive() const { return m_waveActive; }
+    bool isNightFinished() const { return m_wavesCompleted >= m_totalWaves && !m_waveActive && m_pendingSpawns.empty(); }
     float getTimeUntilNextWave() const { return m_timeUntilNextWave; }
     float getWaveBannerTimer() const { return m_waveBannerTimer; }
     float getWaveClearedTimer() const { return m_waveClearedTimer; }
@@ -47,8 +49,9 @@ public:
     bool isBossWave() const { return m_isBossWave; }
 
     int getEnemiesDefeatedThisNight() const { return m_enemiesDefeatedThisNight; }
-    void notifyEnemyKilled() { m_enemiesDefeatedThisNight++; }
+    void notifyEnemyKilled(int waveId = 0);
 
+    static int getTotalWavesForDay(int day);
     static void getWaveComposition(int day, int wave, int& crawlers, int& eaters, int& brutes, int& leviathans);
     WavePreview getUpcomingWavePreview(int dayNumber, float duskCountdown = -1.0f) const;
 
@@ -59,6 +62,11 @@ private:
     int m_currentWave = 0;
     int m_totalWaves = 3;
     int m_wavesCompleted = 0;
+    int m_currentWaveId = 0;
+    int m_waveEnemiesScheduled = 0;
+    int m_waveEnemiesSpawned = 0;
+    int m_waveEnemiesAlive = 0;
+
     bool m_nightActive = false;
     bool m_waveActive = false;
     bool m_isBossWave = false;

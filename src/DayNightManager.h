@@ -57,6 +57,8 @@ public:
     float getNightDuration() const { return m_nightDuration; }
     float getDawnDuration() const { return m_dawnDuration; }
 
+    static float getNightDurationForDay(int day);
+
     uint8_t getAmbientDarkness() const;
     ColorRGBA getAmbientColor() const;
 
@@ -73,8 +75,8 @@ public:
     void notifyLighthouseHurt() { m_lighthouseHurtAlertTimer = 2.0f; }
 
     int getTotalEnemiesDefeated() const { return m_totalEnemiesDefeated; }
-    void notifyEnemyKilled() {
-        m_waveManager.notifyEnemyKilled();
+    void notifyEnemyKilled(int waveId = 0) {
+        m_waveManager.notifyEnemyKilled(waveId);
         m_totalEnemiesDefeated++;
     }
 
@@ -86,7 +88,7 @@ private:
 
     float m_dayDuration = 60.0f;
     float m_duskDuration = 18.0f;
-    float m_nightDuration = 70.0f;
+    float m_nightDuration = 65.0f;
     float m_dawnDuration = 12.0f;
 
     WaveManager m_waveManager;
@@ -117,6 +119,7 @@ private:
     void calculateDawnReward(
         const Lighthouse& lighthouse,
         const std::vector<PlacedMirror>& mirrors,
-        Player& player
+        Player& player,
+        const IslandMap& map
     );
 };

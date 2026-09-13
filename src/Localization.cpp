@@ -203,7 +203,7 @@ std::vector<std::string> Localization::getWorkshopItems(const Lighthouse& lighth
 
     if (isAr) {
         list.push_back("1. مرآة نحاسية عاكسة [" + std::to_string(player.mirrorsInBag) + " بالحقيبة]");
-        list.push_back("2. تعبئة وقود المنارة (+40 وقود)");
+        list.push_back("2. تعبئة وقود المنارة (+35 وقود)");
         list.push_back("3. ترميم هيكل المنارة (+120 نقطة)");
         list.push_back("4. نواة أثرية للمذابح [" + std::to_string(player.relicCores) + " بالحقيبة]");
         list.push_back(std::string("5. عدسة العنبر الواقية ") + (lighthouse.unlockWideLens ? "[مفعلة]" : "[مقفلة]"));
@@ -216,7 +216,7 @@ std::vector<std::string> Localization::getWorkshopItems(const Lighthouse& lighth
         list.push_back("12. ترقية حذاء السرعة [مستوى " + std::to_string(lighthouse.swiftBootsLevel) + "/3]");
     } else {
         list.push_back("1. Reflective Brass Mirror [" + std::to_string(player.mirrorsInBag) + " in bag]");
-        list.push_back("2. Beacon Fuel Tank (+40 Fuel)");
+        list.push_back("2. Beacon Fuel Tank (+35 Fuel)");
         list.push_back("3. Lighthouse Hull Repair (+120 HP)");
         list.push_back("4. Ancient Relic Core [" + std::to_string(player.relicCores) + " in bag]");
         list.push_back(std::string("5. Amber Wide-Defense Lens ") + (lighthouse.unlockWideLens ? "[Unlocked]" : "[Locked]"));
@@ -245,19 +245,19 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "توضع على الأرض [F] وتعكس شعاع النور بزاوية 90° [R]" : "Placed via [F] to redirect the lighthouse beam [R]";
         info.currentStatStr = isAr ? ("صحة المرآة: " + std::to_string((int)lighthouse.getMirrorMaxHealth()) + " HP") : ("Mirror Durability: " + std::to_string((int)lighthouse.getMirrorMaxHealth()) + " HP");
         info.nextStatStr = isAr ? "توجه الضوء لحرق كائنات الظل وحماية الشواطئ" : "Vaporizes crawling hordes along reflective corridors";
-        info.costWood = 10;
-        info.costCrystals = 5;
+        info.costWood = 12;
+        info.costCrystals = 6;
         info.isUpgrade = false;
         info.isMaxed = false;
         break;
 
     case 1: // Refuel
-        info.name = isAr ? "تزويد المنارة بالوقود (+40)" : "Refuel Lighthouse Tank (+40 Fuel)";
+        info.name = isAr ? "تزويد المنارة بالوقود (+35)" : "Refuel Lighthouse Tank (+35 Fuel)";
         info.category = isAr ? "صيانة المنارة الأساسية" : "BEACON MAINTENANCE";
         info.currentLevelStr = isAr ? ("الوقود الحالي: " + std::to_string((int)lighthouse.getFuel()) + " / 100") : ("Current Fuel: " + std::to_string((int)lighthouse.getFuel()) + " / 100");
         info.nextLevelStr = isAr ? "يغذي شعلة النور للحفاظ على الشعاع مشتعلاً طوال الليل" : "Keeps the central flame burning through dark nights";
         info.currentStatStr = isAr ? "استهلاك الوقود: عادي" : "Fuel Burn Rate: Standard";
-        info.nextStatStr = isAr ? "+40 إلى خزان وقود المنارة فوراً" : "+40 Fuel added immediately";
+        info.nextStatStr = isAr ? "+35 إلى خزان وقود المنارة فوراً" : "+35 Fuel added immediately";
         info.costOil = 10;
         info.isUpgrade = false;
         info.isMaxed = false;
@@ -270,8 +270,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "ترميم الأضرار الناتجة عن هجمات كواسر الظل" : "Patches breaches caused by shadow abominations";
         info.currentStatStr = isAr ? "الهيكل الأساسي للمنارة" : "Lighthouse Citadel Foundation";
         info.nextStatStr = isAr ? "+120 نقطة صحة لهيكل المنارة" : "+120 HP restored to Lighthouse";
-        info.costWood = 15;
-        info.costCrystals = 10;
+        info.costWood = 16;
+        info.costCrystals = 12;
         info.isUpgrade = false;
         info.isMaxed = false;
         break;
@@ -283,8 +283,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "تستخدم لإشعال المذابح الأثرية الثلاثة في أرجاء الجزيرة" : "Required to rekindle the 3 Ancient Altars across the isle";
         info.currentStatStr = isAr ? "تحتوي على طاقة شمسية مركزة" : "Contains dormant celestial solar power";
         info.nextStatStr = isAr ? "إشعال المذابح الثلاثة يوقظ الفجر الأول ويحقق النصر!" : "Igniting 3 Altars awakens the First Dawn and wins the game!";
-        info.costWood = 15;
-        info.costCrystals = 20;
+        info.costWood = 16;
+        info.costCrystals = 22;
         info.isUpgrade = false;
         info.isMaxed = false;
         break;
@@ -296,7 +296,7 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "شعاع ضوئي عريض بزاوية تغطية واسعة يدفع الأعداء للخلف" : "Emits a wide-angle arc beam that slows & repels crowds";
         info.currentStatStr = isAr ? "العدسة الأساسية: شعاع شمسي مركز" : "Current: Narrow Solar Beam";
         info.nextStatStr = isAr ? "تبديل سريع بالمفتاح [2]" : "Quick-swap using [2]";
-        info.costCrystals = 15;
+        info.costCrystals = 16;
         info.isUpgrade = false;
         info.isMaxed = lighthouse.unlockWideLens;
         break;
@@ -308,7 +308,7 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "نبضات موجية كهرومغناطيسية تصعق كائنات الظل وتشلها" : "Discharges periodic UV bursts that stun shadow abominations";
         info.currentStatStr = isAr ? "مدافع نبضية عالية التردد" : "High-frequency defensive pulse";
         info.nextStatStr = isAr ? "تبديل سريع بالمفتاح [3]" : "Quick-swap using [3]";
-        info.costCrystals = 25;
+        info.costCrystals = 28;
         info.isUpgrade = false;
         info.isMaxed = lighthouse.unlockUVLens;
         break;
@@ -320,8 +320,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
         info.nextLevelStr = isAr ? "يستخدم بالمفتاح [H] لاستعادة 50 نقطة من صحة الحارس" : "Press [H] during exploration or combat to restore 50 HP";
         info.currentStatStr = isAr ? "صحة الحارس: 100 HP" : "Keeper Vitality: 100 HP";
         info.nextStatStr = isAr ? "علاج فوري لحالات الطوارئ" : "Instant tactical survival heal";
-        info.costWood = 5;
-        info.costCrystals = 5;
+        info.costWood = 6;
+        info.costCrystals = 6;
         info.isUpgrade = false;
         info.isMaxed = false;
         break;
@@ -343,8 +343,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
             int nextBonus = curBonus + 25;
             info.currentStatStr = isAr ? ("مضاعف الضرر الحالي: +" + std::to_string(curBonus) + "%") : ("Current Damage Bonus: +" + std::to_string(curBonus) + "%");
             info.nextStatStr = isAr ? ("المستوى التالي: +" + std::to_string(nextBonus) + "% ضرر لشعاع المنارة") : ("Next Level: +" + std::to_string(nextBonus) + "% Beam Damage");
-            info.costCrystals = (lighthouse.beamPowerLevel == 1) ? 20 : 30;
-            info.costWood = (lighthouse.beamPowerLevel == 1) ? 10 : 15;
+            info.costCrystals = (lighthouse.beamPowerLevel == 1) ? 18 : 32;
+            info.costWood = (lighthouse.beamPowerLevel == 1) ? 12 : 20;
         }
         break;
 
@@ -365,8 +365,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
             int nextSav = curSav + 25;
             info.currentStatStr = isAr ? ("توفير الوقود الحالي: -" + std::to_string(curSav) + "%") : ("Current Fuel Saving: -" + std::to_string(curSav) + "%");
             info.nextStatStr = isAr ? ("المستوى التالي: -" + std::to_string(nextSav) + "% استهلاك وقود المنارة") : ("Next Level: -" + std::to_string(nextSav) + "% Fuel Consumption");
-            info.costCrystals = (lighthouse.beamEfficiencyLevel == 1) ? 15 : 25;
-            info.costOil = (lighthouse.beamEfficiencyLevel == 1) ? 10 : 18;
+            info.costCrystals = (lighthouse.beamEfficiencyLevel == 1) ? 16 : 28;
+            info.costOil = (lighthouse.beamEfficiencyLevel == 1) ? 12 : 20;
         }
         break;
 
@@ -387,8 +387,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
             int nextHp = curHp + 45;
             info.currentStatStr = isAr ? ("صحة المرآة الحالية: " + std::to_string(curHp) + " HP") : ("Current Mirror HP: " + std::to_string(curHp) + " HP");
             info.nextStatStr = isAr ? ("المستوى التالي: " + std::to_string(nextHp) + " HP (+45 صحة لكل المرايا)") : ("Next Level: " + std::to_string(nextHp) + " HP (+45 HP for all mirrors)");
-            info.costWood = (lighthouse.mirrorDurabilityLevel == 1) ? 15 : 25;
-            info.costCrystals = (lighthouse.mirrorDurabilityLevel == 1) ? 10 : 15;
+            info.costWood = (lighthouse.mirrorDurabilityLevel == 1) ? 16 : 28;
+            info.costCrystals = (lighthouse.mirrorDurabilityLevel == 1) ? 12 : 20;
         }
         break;
 
@@ -410,8 +410,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
             int nextHp = curHp + bonus;
             info.currentStatStr = isAr ? ("صحة المنارة القصوى: " + std::to_string(curHp) + " HP") : ("Max Citadel HP: " + std::to_string(curHp) + " HP");
             info.nextStatStr = isAr ? ("المستوى التالي: " + std::to_string(nextHp) + " HP (+" + std::to_string(bonus) + " HP)") : ("Next Level: " + std::to_string(nextHp) + " HP (+" + std::to_string(bonus) + " HP)");
-            info.costWood = (lighthouse.lighthouseArmorLevel == 1) ? 25 : 40;
-            info.costCrystals = (lighthouse.lighthouseArmorLevel == 1) ? 20 : 35;
+            info.costWood = (lighthouse.lighthouseArmorLevel == 1) ? 22 : 36;
+            info.costCrystals = (lighthouse.lighthouseArmorLevel == 1) ? 16 : 28;
         }
         break;
 
@@ -432,8 +432,8 @@ WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& 
             int nextSpdBonus = curSpdBonus + 28;
             info.currentStatStr = isAr ? ("علاوة السرعة الحالية: +" + std::to_string(curSpdBonus)) : ("Current Speed Bonus: +" + std::to_string(curSpdBonus));
             info.nextStatStr = isAr ? ("المستوى التالي: +" + std::to_string(nextSpdBonus) + " سرعة وتفادٍ أسرع بـ 0.18 ث") : ("Next Level: +" + std::to_string(nextSpdBonus) + " Speed & -0.18s Dash CD");
-            info.costWood = (lighthouse.swiftBootsLevel == 1) ? 15 : 25;
-            info.costOil = (lighthouse.swiftBootsLevel == 1) ? 10 : 18;
+            info.costWood = (lighthouse.swiftBootsLevel == 1) ? 15 : 26;
+            info.costOil = (lighthouse.swiftBootsLevel == 1) ? 12 : 18;
         }
         break;
     }

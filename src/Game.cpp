@@ -239,88 +239,88 @@ void Game::buyWorkshopItem(int index) {
     bool isAr = Localization::instance().isArabic();
 
     switch (index) {
-    case 0: // Craft Mirror (10 Wood, 5 Crystals)
-        if (m_player.wood >= 10 && m_player.crystals >= 5) {
-            m_player.wood -= 10;
-            m_player.crystals -= 5;
+    case 0: // Craft Mirror (12 Wood, 6 Crystals)
+        if (m_player.wood >= 12 && m_player.crystals >= 6) {
+            m_player.wood -= 12;
+            m_player.crystals -= 6;
             m_player.mirrorsInBag++;
             AudioManager::instance().playSound(SoundID::Craft, 0.8f);
             setStatus(isAr ? "تمت صناعة مرآة نحاسية عاكسة!" : "Crafted 1 Reflective Mirror!", 2.5f);
         } else {
-            setStatus(isAr ? "الموارد غير كافية! (يلزم 10 خشب، 5 بلورات)" : "Not enough materials! (Needs 10 Wood, 5 Crystals)", 2.5f);
+            setStatus(isAr ? "الموارد غير كافية! (يلزم 12 خشب، 6 بلورات)" : "Not enough materials! (Needs 12 Wood, 6 Crystals)", 2.5f);
         }
         break;
 
-    case 1: // Refuel Lighthouse (10 Oil)
+    case 1: // Refuel Lighthouse (10 Oil -> +35 Fuel)
         if (m_player.oil >= 10) {
             m_player.oil -= 10;
-            m_lighthouse.addFuel(40.0f);
+            m_lighthouse.addFuel(35.0f);
             AudioManager::instance().playSound(SoundID::HarvestOil, 0.8f);
-            setStatus(isAr ? "تم تزويد المنارة +40 وقود!" : "Lighthouse refueled +40 Fuel!", 2.5f);
+            setStatus(isAr ? "تم تزويد المنارة +35 وقود!" : "Lighthouse refueled +35 Fuel!", 2.5f);
         } else {
             setStatus(isAr ? "الوقود غير كافٍ! (يلزم 10 وقود)" : "Not enough Oil! (Needs 10 Oil)", 2.5f);
         }
         break;
 
-    case 2: // Repair Lighthouse (15 Wood, 10 Crystals)
-        if (m_player.wood >= 15 && m_player.crystals >= 10) {
-            m_player.wood -= 15;
-            m_player.crystals -= 10;
+    case 2: // Repair Lighthouse (16 Wood, 12 Crystals)
+        if (m_player.wood >= 16 && m_player.crystals >= 12) {
+            m_player.wood -= 16;
+            m_player.crystals -= 12;
             m_lighthouse.repair(120.0f);
             AudioManager::instance().playSound(SoundID::Craft, 0.8f);
             setStatus(isAr ? "تم إصلاح هيكل المنارة +120 نقطة حياة!" : "Lighthouse hull repaired +120 HP!", 2.5f);
         } else {
-            setStatus(isAr ? "الموارد غير كافية! (يلزم 15 خشب، 10 بلورات)" : "Not enough materials! (Needs 15 Wood, 10 Crystals)", 2.5f);
+            setStatus(isAr ? "الموارد غير كافية! (يلزم 16 خشب، 12 بلورة)" : "Not enough materials! (Needs 16 Wood, 12 Crystals)", 2.5f);
         }
         break;
 
-    case 3: // Craft Relic Core (20 Crystals, 15 Wood)
-        if (m_player.crystals >= 20 && m_player.wood >= 15) {
-            m_player.crystals -= 20;
-            m_player.wood -= 15;
+    case 3: // Craft Relic Core (22 Crystals, 16 Wood)
+        if (m_player.crystals >= 22 && m_player.wood >= 16) {
+            m_player.crystals -= 22;
+            m_player.wood -= 16;
             m_player.relicCores++;
             AudioManager::instance().playSound(SoundID::AltarIgnite, 0.8f);
             setStatus(isAr ? "تمت صناعة نواة أثرية! خذها إلى أحد المذابح الأثرية." : "Crafted Relic Core! Take it to an Ancient Altar.", 4.0f);
         } else {
-            setStatus(isAr ? "يلزم 20 بلورة و 15 خشباً لصنع النواة الأثرية!" : "Needs 20 Crystals, 15 Wood for a Relic Core!", 2.5f);
+            setStatus(isAr ? "يلزم 22 بلورة و 16 خشباً لصنع النواة الأثرية!" : "Needs 22 Crystals, 16 Wood for a Relic Core!", 2.5f);
         }
         break;
 
-    case 4: // Unlock Amber Wide Lens (15 Crystals)
+    case 4: // Unlock Amber Wide Lens (16 Crystals)
         if (!m_lighthouse.unlockWideLens) {
-            if (m_player.crystals >= 15) {
-                m_player.crystals -= 15;
+            if (m_player.crystals >= 16) {
+                m_player.crystals -= 16;
                 m_lighthouse.unlockWideLens = true;
                 AudioManager::instance().playSound(SoundID::Craft, 0.9f);
                 setStatus(isAr ? "تم فتح عدسة العنبر الواقية! اضغط [2] للتفعيل." : "Unlocked Amber Wide Lens! Press [2] to equip.", 3.5f);
             } else {
-                setStatus(isAr ? "يلزم 15 بلورة لفتح عدسة العنبر!" : "Needs 15 Crystals to unlock Amber Lens!", 2.5f);
+                setStatus(isAr ? "يلزم 16 بلورة لفتح عدسة العنبر!" : "Needs 16 Crystals to unlock Amber Lens!", 2.5f);
             }
         }
         break;
 
-    case 5: // Unlock UV Pulse Lens (25 Crystals)
+    case 5: // Unlock UV Pulse Lens (28 Crystals)
         if (!m_lighthouse.unlockUVLens) {
-            if (m_player.crystals >= 25) {
-                m_player.crystals -= 25;
+            if (m_player.crystals >= 28) {
+                m_player.crystals -= 28;
                 m_lighthouse.unlockUVLens = true;
                 AudioManager::instance().playSound(SoundID::Craft, 0.9f);
                 setStatus(isAr ? "تم فتح عدسة الصدمة فوق البنفسجية! اضغط [3] للتفعيل." : "Unlocked UV Pulse Lens! Press [3] to equip.", 3.5f);
             } else {
-                setStatus(isAr ? "يلزم 25 بلورة لفتح عدسة UV!" : "Needs 25 Crystals to unlock UV Lens!", 2.5f);
+                setStatus(isAr ? "يلزم 28 بلورة لفتح عدسة UV!" : "Needs 28 Crystals to unlock UV Lens!", 2.5f);
             }
         }
         break;
 
-    case 6: // Craft Healing Salve (5 Wood, 5 Crystals)
-        if (m_player.wood >= 5 && m_player.crystals >= 5) {
-            m_player.wood -= 5;
-            m_player.crystals -= 5;
+    case 6: // Craft Healing Salve (6 Wood, 6 Crystals)
+        if (m_player.wood >= 6 && m_player.crystals >= 6) {
+            m_player.wood -= 6;
+            m_player.crystals -= 6;
             m_player.salves++;
             AudioManager::instance().playSound(SoundID::Craft, 0.7f);
             setStatus(isAr ? "تمت صناعة مرهم شفاء! اضغط [H] للاستخدام." : "Crafted Healing Salve! Press [H] to use.", 2.5f);
         } else {
-            setStatus(isAr ? "يلزم 5 خشب و 5 بلورات!" : "Needs 5 Wood, 5 Crystals!", 2.5f);
+            setStatus(isAr ? "يلزم 6 خشب و 6 بلورات!" : "Needs 6 Wood, 6 Crystals!", 2.5f);
         }
         break;
 
@@ -328,8 +328,8 @@ void Game::buyWorkshopItem(int index) {
         if (m_lighthouse.beamPowerLevel >= 3) {
             setStatus(isAr ? "تم بلوغ المستوى الأقصى لقوة الشعاع!" : "Beam Power is already at MAX level!", 2.5f);
         } else {
-            int needCry = (m_lighthouse.beamPowerLevel == 1) ? 20 : 30;
-            int needWood = (m_lighthouse.beamPowerLevel == 1) ? 10 : 15;
+            int needCry = (m_lighthouse.beamPowerLevel == 1) ? 18 : 32;
+            int needWood = (m_lighthouse.beamPowerLevel == 1) ? 12 : 20;
             if (m_player.crystals >= needCry && m_player.wood >= needWood) {
                 m_player.crystals -= needCry;
                 m_player.wood -= needWood;
@@ -348,8 +348,8 @@ void Game::buyWorkshopItem(int index) {
         if (m_lighthouse.beamEfficiencyLevel >= 3) {
             setStatus(isAr ? "تم بلوغ المستوى الأقصى لكفاءة الوقود!" : "Beam Efficiency is already at MAX level!", 2.5f);
         } else {
-            int needCry = (m_lighthouse.beamEfficiencyLevel == 1) ? 15 : 25;
-            int needOil = (m_lighthouse.beamEfficiencyLevel == 1) ? 10 : 18;
+            int needCry = (m_lighthouse.beamEfficiencyLevel == 1) ? 16 : 28;
+            int needOil = (m_lighthouse.beamEfficiencyLevel == 1) ? 12 : 20;
             if (m_player.crystals >= needCry && m_player.oil >= needOil) {
                 m_player.crystals -= needCry;
                 m_player.oil -= needOil;
@@ -368,8 +368,8 @@ void Game::buyWorkshopItem(int index) {
         if (m_lighthouse.mirrorDurabilityLevel >= 3) {
             setStatus(isAr ? "تم بلوغ المستوى الأقصى لصلابة المرايا!" : "Mirror Durability is already at MAX level!", 2.5f);
         } else {
-            int needWood = (m_lighthouse.mirrorDurabilityLevel == 1) ? 15 : 25;
-            int needCry = (m_lighthouse.mirrorDurabilityLevel == 1) ? 10 : 15;
+            int needWood = (m_lighthouse.mirrorDurabilityLevel == 1) ? 16 : 28;
+            int needCry = (m_lighthouse.mirrorDurabilityLevel == 1) ? 12 : 20;
             if (m_player.wood >= needWood && m_player.crystals >= needCry) {
                 m_player.wood -= needWood;
                 m_player.crystals -= needCry;
@@ -394,8 +394,8 @@ void Game::buyWorkshopItem(int index) {
         if (m_lighthouse.lighthouseArmorLevel >= 3) {
             setStatus(isAr ? "تم بلوغ المستوى الأقصى لدروع المنارة!" : "Lighthouse Armor is already at MAX level!", 2.5f);
         } else {
-            int needWood = (m_lighthouse.lighthouseArmorLevel == 1) ? 25 : 40;
-            int needCry = (m_lighthouse.lighthouseArmorLevel == 1) ? 20 : 35;
+            int needWood = (m_lighthouse.lighthouseArmorLevel == 1) ? 22 : 36;
+            int needCry = (m_lighthouse.lighthouseArmorLevel == 1) ? 16 : 28;
             if (m_player.wood >= needWood && m_player.crystals >= needCry) {
                 m_player.wood -= needWood;
                 m_player.crystals -= needCry;
@@ -414,8 +414,8 @@ void Game::buyWorkshopItem(int index) {
         if (m_lighthouse.swiftBootsLevel >= 3) {
             setStatus(isAr ? "تم بلوغ المستوى الأقصى لحذاء الحارس!" : "Swift Boots are already at MAX level!", 2.5f);
         } else {
-            int needWood = (m_lighthouse.swiftBootsLevel == 1) ? 15 : 25;
-            int needOil = (m_lighthouse.swiftBootsLevel == 1) ? 10 : 18;
+            int needWood = (m_lighthouse.swiftBootsLevel == 1) ? 15 : 26;
+            int needOil = (m_lighthouse.swiftBootsLevel == 1) ? 12 : 18;
             if (m_player.wood >= needWood && m_player.oil >= needOil) {
                 m_player.wood -= needWood;
                 m_player.oil -= needOil;
@@ -622,10 +622,10 @@ void Game::update(float dt) {
         }
 
         if (it->isDead()) {
-            m_dayNight.notifyEnemyKilled();
+            m_dayNight.notifyEnemyKilled(it->getWaveId());
             int dropRoll = rand() % 100;
-            if (dropRoll < 40) m_player.crystals += 1;
-            if (dropRoll > 80) m_player.oil += 1;
+            if (dropRoll < 35) m_player.crystals += 1;
+            if (dropRoll >= 85) m_player.oil += 1;
             it = m_enemies.erase(it);
         } else {
             ++it;
