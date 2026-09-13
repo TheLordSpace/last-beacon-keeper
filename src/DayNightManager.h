@@ -11,15 +11,20 @@
 enum class GameState;
 
 struct DawnReward {
+    int dayNumber = 1;
+    int wavesCompleted = 3;
+    int totalWaves = 3;
+    int enemiesDefeated = 0;
+    float lighthouseHp = 500.0f;
+    float lighthouseMaxHp = 500.0f;
+    float lighthouseHpPercent = 100.0f;
+    float fuelRemaining = 0.0f;
+    int mirrorsPreserved = 0;
     int wood = 0;
     int crystals = 0;
     int oil = 0;
     int relicCores = 0;
     int salves = 0;
-    int enemiesDefeated = 0;
-    int mirrorsPreserved = 0;
-    float lighthouseHpPercent = 100.0f;
-    float fuelRemaining = 0.0f;
 };
 
 class DayNightManager {
@@ -58,6 +63,8 @@ public:
     WaveManager& getWaveManager() { return m_waveManager; }
     const WaveManager& getWaveManager() const { return m_waveManager; }
 
+    WavePreview getUpcomingWavePreview() const;
+
     const DawnReward& getLastDawnReward() const { return m_lastDawnReward; }
     bool hasDawnReward() const { return m_phase == DayPhase::Dawn || m_dawnSummaryTimer > 0.0f; }
     float getDawnSummaryTimer() const { return m_dawnSummaryTimer; }
@@ -78,8 +85,8 @@ private:
     float m_phaseDuration = 60.0f;
 
     float m_dayDuration = 60.0f;
-    float m_duskDuration = 15.0f;
-    float m_nightDuration = 65.0f;
+    float m_duskDuration = 18.0f;
+    float m_nightDuration = 70.0f;
     float m_dawnDuration = 12.0f;
 
     WaveManager m_waveManager;
@@ -87,6 +94,11 @@ private:
     DawnReward m_lastDawnReward;
     float m_dawnSummaryTimer = 0.0f;
     float m_lighthouseHurtAlertTimer = 0.0f;
+
+    float m_fuelAlertCooldown = 0.0f;
+    int m_lastFuelThreshold = 0; // 0 = ok, 1 = <30%, 2 = <15%
+    float m_hpAlertCooldown = 0.0f;
+    int m_lastHpThreshold = 0;   // 0 = ok, 1 = <50%, 2 = <25%
 
     int m_totalEnemiesDefeated = 0;
 

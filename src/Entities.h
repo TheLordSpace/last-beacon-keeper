@@ -94,6 +94,13 @@ public:
     bool isDashing() const { return m_dashTimer > 0.0f; }
     bool isSwinging() const { return m_swingTimer > 0.0f; }
 
+    void setBonuses(float speedBonus_, float dashCdBonus_) {
+        speedBonus = speedBonus_;
+        dashCooldownBonus = dashCdBonus_;
+    }
+    float speedBonus = 0.0f;
+    float dashCooldownBonus = 0.0f;
+
     // Inventory
     int wood = 25;
     int crystals = 15;

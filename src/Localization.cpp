@@ -1,7 +1,10 @@
 #include "Localization.h"
+#include "Entities.h"
+#include "Lighthouse.h"
 #include <fribidi/fribidi.h>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 Localization& Localization::instance() {
     static Localization s_inst;
@@ -183,39 +186,259 @@ std::string Localization::getControlsText() const {
 }
 
 std::string Localization::getWorkshopTitle() const {
-    return (m_lang == Language::Arabic) ? "ورشة المنارة والترقيات" : "LIGHTHOUSE WORKBENCH & CRAFTING";
+    return (m_lang == Language::Arabic) ? "ورشة المنارة والترقيات الدفاعية" : "THE LIGHTHOUSE WORKSHOP & UPGRADES";
 }
 
 std::string Localization::getWorkshopSubtitle() const {
     if (m_lang == Language::Arabic) {
-        return "استخدم [W/S] للاختيار، [ENTER/Space] للصنع، [ESC/E] للعودة";
+        return "استخدم [W/S] للتنقل، [ENTER] للصنع أو الترقية، [ESC/E] للإغلاق";
     } else {
-        return "Use [W/S] to Select, [ENTER/SPACE] to Craft, [ESC/E] to Exit";
+        return "Use [W/S] to Navigate, [ENTER] to Craft / Upgrade, [ESC/E] to Close";
     }
 }
 
-std::vector<std::string> Localization::getWorkshopItems() const {
-    if (m_lang == Language::Arabic) {
-        return {
-            "1. صناعة مرآة نحاسية عاكسة (التكلفة: 10 خشب، 5 بلورات)",
-            "2. تزويد خزان المنارة +40 وقود (التكلفة: 10 وقود)",
-            "3. إصلاح هيكل المنارة +120 نقطة حياة (التكلفة: 15 خشب، 10 بلورات)",
-            "4. صناعة نواة أثرية لإشعال المذابح (التكلفة: 15 خشب، 20 بلورات)",
-            "5. فتح عدسة العنبر الواقية العريضة (التكلفة: 15 بلورات)",
-            "6. فتح عدسة الصدمة فوق البنفسجية UV (التكلفة: 25 بلورات)",
-            "7. صناعة مرهم شفاء [H] (التكلفة: 5 خشب، 5 بلورات)"
-        };
+std::vector<std::string> Localization::getWorkshopItems(const Lighthouse& lighthouse, const Player& player) const {
+    bool isAr = (m_lang == Language::Arabic);
+    std::vector<std::string> list;
+
+    if (isAr) {
+        list.push_back("1. مرآة نحاسية عاكسة [" + std::to_string(player.mirrorsInBag) + " بالحقيبة]");
+        list.push_back("2. تعبئة وقود المنارة (+40 وقود)");
+        list.push_back("3. ترميم هيكل المنارة (+120 نقطة)");
+        list.push_back("4. نواة أثرية للمذابح [" + std::to_string(player.relicCores) + " بالحقيبة]");
+        list.push_back(std::string("5. عدسة العنبر الواقية ") + (lighthouse.unlockWideLens ? "[مفعلة]" : "[مقفلة]"));
+        list.push_back(std::string("6. عدسة صدمة UV ") + (lighthouse.unlockUVLens ? "[مفعلة]" : "[مقفلة]"));
+        list.push_back("7. مرهم شفاء الحارس [" + std::to_string(player.salves) + " بالحقيبة]");
+        list.push_back("8. ترقية قوة الشعاع [مستوى " + std::to_string(lighthouse.beamPowerLevel) + "/3]");
+        list.push_back("9. ترقية كفاءة الوقود [مستوى " + std::to_string(lighthouse.beamEfficiencyLevel) + "/3]");
+        list.push_back("10. ترقية صلابة المرايا [مستوى " + std::to_string(lighthouse.mirrorDurabilityLevel) + "/3]");
+        list.push_back("11. ترقية دروع المنارة [مستوى " + std::to_string(lighthouse.lighthouseArmorLevel) + "/3]");
+        list.push_back("12. ترقية حذاء السرعة [مستوى " + std::to_string(lighthouse.swiftBootsLevel) + "/3]");
     } else {
-        return {
-            "1. Craft Brass Mirror (Cost: 10 Wood, 5 Crystals)",
-            "2. Refuel Beacon Tank +40 (Cost: 10 Oil)",
-            "3. Repair Lighthouse Structure +120 HP (Cost: 15 Wood, 10 Crystals)",
-            "4. Craft Ancient Relic Core for Altars (Cost: 15 Wood, 20 Crystals)",
-            "5. Unlock Amber Wide-Defense Lens (Cost: 15 Crystals)",
-            "6. Unlock UV Pulse Shockwave Lens (Cost: 25 Crystals)",
-            "7. Craft Healing Salve [H] (Cost: 5 Wood, 5 Crystals)"
-        };
+        list.push_back("1. Reflective Brass Mirror [" + std::to_string(player.mirrorsInBag) + " in bag]");
+        list.push_back("2. Beacon Fuel Tank (+40 Fuel)");
+        list.push_back("3. Lighthouse Hull Repair (+120 HP)");
+        list.push_back("4. Ancient Relic Core [" + std::to_string(player.relicCores) + " in bag]");
+        list.push_back(std::string("5. Amber Wide-Defense Lens ") + (lighthouse.unlockWideLens ? "[Unlocked]" : "[Locked]"));
+        list.push_back(std::string("6. UV Pulse Shockwave Lens ") + (lighthouse.unlockUVLens ? "[Unlocked]" : "[Locked]"));
+        list.push_back("7. Keeper's Healing Salve [" + std::to_string(player.salves) + " in bag]");
+        list.push_back("8. Upgrade: Beam Power [Lvl " + std::to_string(lighthouse.beamPowerLevel) + "/3]");
+        list.push_back("9. Upgrade: Beam Efficiency [Lvl " + std::to_string(lighthouse.beamEfficiencyLevel) + "/3]");
+        list.push_back("10. Upgrade: Mirror Durability [Lvl " + std::to_string(lighthouse.mirrorDurabilityLevel) + "/3]");
+        list.push_back("11. Upgrade: Lighthouse Armor [Lvl " + std::to_string(lighthouse.lighthouseArmorLevel) + "/3]");
+        list.push_back("12. Upgrade: Swift Boots [Lvl " + std::to_string(lighthouse.swiftBootsLevel) + "/3]");
     }
+
+    return list;
+}
+
+WorkshopItemInfo Localization::getWorkshopItemInfo(int index, const Lighthouse& lighthouse, const Player& player) const {
+    (void)player;
+    bool isAr = (m_lang == Language::Arabic);
+    WorkshopItemInfo info;
+
+    switch (index) {
+    case 0: // Mirror
+        info.name = isAr ? "صناعة مرآة نحاسية عاكسة" : "Craft Reflective Brass Mirror";
+        info.category = isAr ? "معدات بصرية قابلة للوضع" : "DEPLOYABLE OPTICS";
+        info.currentLevelStr = isAr ? ("في الحقيبة: " + std::to_string(player.mirrorsInBag)) : ("In Bag: " + std::to_string(player.mirrorsInBag));
+        info.nextLevelStr = isAr ? "توضع على الأرض [F] وتعكس شعاع النور بزاوية 90° [R]" : "Placed via [F] to redirect the lighthouse beam [R]";
+        info.currentStatStr = isAr ? ("صحة المرآة: " + std::to_string((int)lighthouse.getMirrorMaxHealth()) + " HP") : ("Mirror Durability: " + std::to_string((int)lighthouse.getMirrorMaxHealth()) + " HP");
+        info.nextStatStr = isAr ? "توجه الضوء لحرق كائنات الظل وحماية الشواطئ" : "Vaporizes crawling hordes along reflective corridors";
+        info.costWood = 10;
+        info.costCrystals = 5;
+        info.isUpgrade = false;
+        info.isMaxed = false;
+        break;
+
+    case 1: // Refuel
+        info.name = isAr ? "تزويد المنارة بالوقود (+40)" : "Refuel Lighthouse Tank (+40 Fuel)";
+        info.category = isAr ? "صيانة المنارة الأساسية" : "BEACON MAINTENANCE";
+        info.currentLevelStr = isAr ? ("الوقود الحالي: " + std::to_string((int)lighthouse.getFuel()) + " / 100") : ("Current Fuel: " + std::to_string((int)lighthouse.getFuel()) + " / 100");
+        info.nextLevelStr = isAr ? "يغذي شعلة النور للحفاظ على الشعاع مشتعلاً طوال الليل" : "Keeps the central flame burning through dark nights";
+        info.currentStatStr = isAr ? "استهلاك الوقود: عادي" : "Fuel Burn Rate: Standard";
+        info.nextStatStr = isAr ? "+40 إلى خزان وقود المنارة فوراً" : "+40 Fuel added immediately";
+        info.costOil = 10;
+        info.isUpgrade = false;
+        info.isMaxed = false;
+        break;
+
+    case 2: // Repair
+        info.name = isAr ? "إصلاح هيكل المنارة (+120 HP)" : "Lighthouse Hull Repair (+120 HP)";
+        info.category = isAr ? "صيانة المنارة الأساسية" : "BEACON MAINTENANCE";
+        info.currentLevelStr = isAr ? ("صحة الهيكل: " + std::to_string((int)lighthouse.getHealth()) + " / " + std::to_string((int)lighthouse.getMaxHealth())) : ("Hull Integrity: " + std::to_string((int)lighthouse.getHealth()) + " / " + std::to_string((int)lighthouse.getMaxHealth()));
+        info.nextLevelStr = isAr ? "ترميم الأضرار الناتجة عن هجمات كواسر الظل" : "Patches breaches caused by shadow abominations";
+        info.currentStatStr = isAr ? "الهيكل الأساسي للمنارة" : "Lighthouse Citadel Foundation";
+        info.nextStatStr = isAr ? "+120 نقطة صحة لهيكل المنارة" : "+120 HP restored to Lighthouse";
+        info.costWood = 15;
+        info.costCrystals = 10;
+        info.isUpgrade = false;
+        info.isMaxed = false;
+        break;
+
+    case 3: // Relic Core
+        info.name = isAr ? "صناعة نواة أثرية قديمة" : "Forge Ancient Relic Core";
+        info.category = isAr ? "مقتنيات النصر المقدسة" : "SACRED ARTIFACT";
+        info.currentLevelStr = isAr ? ("في الحقيبة: " + std::to_string(player.relicCores)) : ("In Bag: " + std::to_string(player.relicCores));
+        info.nextLevelStr = isAr ? "تستخدم لإشعال المذابح الأثرية الثلاثة في أرجاء الجزيرة" : "Required to rekindle the 3 Ancient Altars across the isle";
+        info.currentStatStr = isAr ? "تحتوي على طاقة شمسية مركزة" : "Contains dormant celestial solar power";
+        info.nextStatStr = isAr ? "إشعال المذابح الثلاثة يوقظ الفجر الأول ويحقق النصر!" : "Igniting 3 Altars awakens the First Dawn and wins the game!";
+        info.costWood = 15;
+        info.costCrystals = 20;
+        info.isUpgrade = false;
+        info.isMaxed = false;
+        break;
+
+    case 4: // Amber Lens
+        info.name = isAr ? "عدسة العنبر الواقية العريضة" : "Amber Wide-Defense Lens";
+        info.category = isAr ? "عدسات بصرية متطورة" : "OPTICAL UPGRADE";
+        info.currentLevelStr = lighthouse.unlockWideLens ? (isAr ? "مفتوحة ومفعلة [2]" : "Unlocked [2]") : (isAr ? "مقفلة" : "Locked");
+        info.nextLevelStr = isAr ? "شعاع ضوئي عريض بزاوية تغطية واسعة يدفع الأعداء للخلف" : "Emits a wide-angle arc beam that slows & repels crowds";
+        info.currentStatStr = isAr ? "العدسة الأساسية: شعاع شمسي مركز" : "Current: Narrow Solar Beam";
+        info.nextStatStr = isAr ? "تبديل سريع بالمفتاح [2]" : "Quick-swap using [2]";
+        info.costCrystals = 15;
+        info.isUpgrade = false;
+        info.isMaxed = lighthouse.unlockWideLens;
+        break;
+
+    case 5: // UV Lens
+        info.name = isAr ? "عدسة الصدمة فوق البنفسجية UV" : "UV Pulse Shockwave Lens";
+        info.category = isAr ? "عدسات بصرية متطورة" : "OPTICAL UPGRADE";
+        info.currentLevelStr = lighthouse.unlockUVLens ? (isAr ? "مفتوحة ومفعلة [3]" : "Unlocked [3]") : (isAr ? "مقفلة" : "Locked");
+        info.nextLevelStr = isAr ? "نبضات موجية كهرومغناطيسية تصعق كائنات الظل وتشلها" : "Discharges periodic UV bursts that stun shadow abominations";
+        info.currentStatStr = isAr ? "مدافع نبضية عالية التردد" : "High-frequency defensive pulse";
+        info.nextStatStr = isAr ? "تبديل سريع بالمفتاح [3]" : "Quick-swap using [3]";
+        info.costCrystals = 25;
+        info.isUpgrade = false;
+        info.isMaxed = lighthouse.unlockUVLens;
+        break;
+
+    case 6: // Salve
+        info.name = isAr ? "صناعة مرهم شفاء الحارس" : "Craft Keeper's Healing Salve";
+        info.category = isAr ? "مواد إسعافية" : "SURVIVAL CONSUMABLE";
+        info.currentLevelStr = isAr ? ("في الحقيبة: " + std::to_string(player.salves)) : ("In Bag: " + std::to_string(player.salves));
+        info.nextLevelStr = isAr ? "يستخدم بالمفتاح [H] لاستعادة 50 نقطة من صحة الحارس" : "Press [H] during exploration or combat to restore 50 HP";
+        info.currentStatStr = isAr ? "صحة الحارس: 100 HP" : "Keeper Vitality: 100 HP";
+        info.nextStatStr = isAr ? "علاج فوري لحالات الطوارئ" : "Instant tactical survival heal";
+        info.costWood = 5;
+        info.costCrystals = 5;
+        info.isUpgrade = false;
+        info.isMaxed = false;
+        break;
+
+    case 7: // Beam Power Upgrade
+        info.name = isAr ? "ترقية قوة ضرر الشعاع" : "Lighthouse Beam Power Upgrade";
+        info.category = isAr ? "ترقية منظومة المنارة" : "PERMANENT DEFENSE UPGRADE";
+        info.isUpgrade = true;
+        info.isMaxed = (lighthouse.beamPowerLevel >= 3);
+        info.currentLevelStr = isAr ? ("المستوى: " + std::to_string(lighthouse.beamPowerLevel) + " / 3") : ("Level: " + std::to_string(lighthouse.beamPowerLevel) + " / 3");
+        if (info.isMaxed) {
+            info.nextLevelStr = isAr ? "تم الوصول للحد الأقصى (المستوى 3/3)" : "MAX Level Reached (Level 3/3)";
+            info.currentStatStr = isAr ? "ضرر الشعاع: +50% ضرر فتاك (1.5x)" : "Beam Damage: +50% Overcharged (1.5x)";
+            info.nextStatStr = isAr ? "أقصى طاقة مشعة ممكنة" : "Max radiant output";
+        } else {
+            int nextLvl = lighthouse.beamPowerLevel + 1;
+            info.nextLevelStr = isAr ? ("ترقية إلى المستوى " + std::to_string(nextLvl) + " / 3") : ("Upgrade to Level " + std::to_string(nextLvl) + " / 3");
+            int curBonus = (lighthouse.beamPowerLevel - 1) * 25;
+            int nextBonus = curBonus + 25;
+            info.currentStatStr = isAr ? ("مضاعف الضرر الحالي: +" + std::to_string(curBonus) + "%") : ("Current Damage Bonus: +" + std::to_string(curBonus) + "%");
+            info.nextStatStr = isAr ? ("المستوى التالي: +" + std::to_string(nextBonus) + "% ضرر لشعاع المنارة") : ("Next Level: +" + std::to_string(nextBonus) + "% Beam Damage");
+            info.costCrystals = (lighthouse.beamPowerLevel == 1) ? 20 : 30;
+            info.costWood = (lighthouse.beamPowerLevel == 1) ? 10 : 15;
+        }
+        break;
+
+    case 8: // Beam Efficiency Upgrade
+        info.name = isAr ? "ترقية كفاءة استهلاك الوقود" : "Beam Fuel Efficiency Upgrade";
+        info.category = isAr ? "ترقية منظومة المنارة" : "PERMANENT DEFENSE UPGRADE";
+        info.isUpgrade = true;
+        info.isMaxed = (lighthouse.beamEfficiencyLevel >= 3);
+        info.currentLevelStr = isAr ? ("المستوى: " + std::to_string(lighthouse.beamEfficiencyLevel) + " / 3") : ("Level: " + std::to_string(lighthouse.beamEfficiencyLevel) + " / 3");
+        if (info.isMaxed) {
+            info.nextLevelStr = isAr ? "تم الوصول للحد الأقصى (المستوى 3/3)" : "MAX Level Reached (Level 3/3)";
+            info.currentStatStr = isAr ? "استهلاك الوقود: -50% (نصف الاستهلاك)" : "Fuel Burn: -50% (Eco Mode)";
+            info.nextStatStr = isAr ? "كفاءة حرق وقود مثالية" : "Max fuel conservation reached";
+        } else {
+            int nextLvl = lighthouse.beamEfficiencyLevel + 1;
+            info.nextLevelStr = isAr ? ("ترقية إلى المستوى " + std::to_string(nextLvl) + " / 3") : ("Upgrade to Level " + std::to_string(nextLvl) + " / 3");
+            int curSav = (lighthouse.beamEfficiencyLevel - 1) * 25;
+            int nextSav = curSav + 25;
+            info.currentStatStr = isAr ? ("توفير الوقود الحالي: -" + std::to_string(curSav) + "%") : ("Current Fuel Saving: -" + std::to_string(curSav) + "%");
+            info.nextStatStr = isAr ? ("المستوى التالي: -" + std::to_string(nextSav) + "% استهلاك وقود المنارة") : ("Next Level: -" + std::to_string(nextSav) + "% Fuel Consumption");
+            info.costCrystals = (lighthouse.beamEfficiencyLevel == 1) ? 15 : 25;
+            info.costOil = (lighthouse.beamEfficiencyLevel == 1) ? 10 : 18;
+        }
+        break;
+
+    case 9: // Mirror Durability Upgrade
+        info.name = isAr ? "ترقية صلابة ومقاومة المرايا" : "Mirror Durability Upgrade";
+        info.category = isAr ? "ترقية منظومة المنارة" : "PERMANENT DEFENSE UPGRADE";
+        info.isUpgrade = true;
+        info.isMaxed = (lighthouse.mirrorDurabilityLevel >= 3);
+        info.currentLevelStr = isAr ? ("المستوى: " + std::to_string(lighthouse.mirrorDurabilityLevel) + " / 3") : ("Level: " + std::to_string(lighthouse.mirrorDurabilityLevel) + " / 3");
+        if (info.isMaxed) {
+            info.nextLevelStr = isAr ? "تم الوصول للحد الأقصى (المستوى 3/3)" : "MAX Level Reached (Level 3/3)";
+            info.currentStatStr = isAr ? "صحة المرآة: 170 HP (مصفحة بنحاس مقوى)" : "Mirror Max HP: 170 HP (Reinforced Brass)";
+            info.nextStatStr = isAr ? "أقصى مقاومة ضد هجمات كائنات النور" : "Maximum durability against eaters";
+        } else {
+            int nextLvl = lighthouse.mirrorDurabilityLevel + 1;
+            info.nextLevelStr = isAr ? ("ترقية إلى المستوى " + std::to_string(nextLvl) + " / 3") : ("Upgrade to Level " + std::to_string(nextLvl) + " / 3");
+            int curHp = static_cast<int>(lighthouse.getMirrorMaxHealth());
+            int nextHp = curHp + 45;
+            info.currentStatStr = isAr ? ("صحة المرآة الحالية: " + std::to_string(curHp) + " HP") : ("Current Mirror HP: " + std::to_string(curHp) + " HP");
+            info.nextStatStr = isAr ? ("المستوى التالي: " + std::to_string(nextHp) + " HP (+45 صحة لكل المرايا)") : ("Next Level: " + std::to_string(nextHp) + " HP (+45 HP for all mirrors)");
+            info.costWood = (lighthouse.mirrorDurabilityLevel == 1) ? 15 : 25;
+            info.costCrystals = (lighthouse.mirrorDurabilityLevel == 1) ? 10 : 15;
+        }
+        break;
+
+    case 10: // Lighthouse Armor Upgrade
+        info.name = isAr ? "ترقية دروع وتحصينات المنارة" : "Lighthouse Citadel Armor";
+        info.category = isAr ? "ترقية منظومة المنارة" : "PERMANENT DEFENSE UPGRADE";
+        info.isUpgrade = true;
+        info.isMaxed = (lighthouse.lighthouseArmorLevel >= 3);
+        info.currentLevelStr = isAr ? ("المستوى: " + std::to_string(lighthouse.lighthouseArmorLevel) + " / 3") : ("Level: " + std::to_string(lighthouse.lighthouseArmorLevel) + " / 3");
+        if (info.isMaxed) {
+            info.nextLevelStr = isAr ? "تم الوصول للحد الأقصى (المستوى 3/3)" : "MAX Level Reached (Level 3/3)";
+            info.currentStatStr = isAr ? "صحة المنارة: 850 HP (حصن منيع)" : "Citadel Integrity: 850 HP (Fortress)";
+            info.nextStatStr = isAr ? "أعلى مستوى تدريع للمنارة" : "Ultimate citadel reinforcement";
+        } else {
+            int nextLvl = lighthouse.lighthouseArmorLevel + 1;
+            info.nextLevelStr = isAr ? ("ترقية إلى المستوى " + std::to_string(nextLvl) + " / 3") : ("Upgrade to Level " + std::to_string(nextLvl) + " / 3");
+            int curHp = static_cast<int>(lighthouse.getMaxHealth());
+            int bonus = (lighthouse.lighthouseArmorLevel == 1) ? 150 : 200;
+            int nextHp = curHp + bonus;
+            info.currentStatStr = isAr ? ("صحة المنارة القصوى: " + std::to_string(curHp) + " HP") : ("Max Citadel HP: " + std::to_string(curHp) + " HP");
+            info.nextStatStr = isAr ? ("المستوى التالي: " + std::to_string(nextHp) + " HP (+" + std::to_string(bonus) + " HP)") : ("Next Level: " + std::to_string(nextHp) + " HP (+" + std::to_string(bonus) + " HP)");
+            info.costWood = (lighthouse.lighthouseArmorLevel == 1) ? 25 : 40;
+            info.costCrystals = (lighthouse.lighthouseArmorLevel == 1) ? 20 : 35;
+        }
+        break;
+
+    case 11: // Swift Boots Upgrade
+        info.name = isAr ? "ترقية حذاء الحارس السريع" : "Keeper's Swift Boots Upgrade";
+        info.category = isAr ? "ترقية قدرات الحارس" : "PERMANENT DEFENSE UPGRADE";
+        info.isUpgrade = true;
+        info.isMaxed = (lighthouse.swiftBootsLevel >= 3);
+        info.currentLevelStr = isAr ? ("المستوى: " + std::to_string(lighthouse.swiftBootsLevel) + " / 3") : ("Level: " + std::to_string(lighthouse.swiftBootsLevel) + " / 3");
+        if (info.isMaxed) {
+            info.nextLevelStr = isAr ? "تم الوصول للحد الأقصى (المستوى 3/3)" : "MAX Level Reached (Level 3/3)";
+            info.currentStatStr = isAr ? "السرعة: +56 | تفادي أسرع: 0.54 ثانية" : "Speed: +56 | Dash Cooldown: 0.54s";
+            info.nextStatStr = isAr ? "أقصى رشاقة وحركة ميدانية" : "Maximum agility and mobility";
+        } else {
+            int nextLvl = lighthouse.swiftBootsLevel + 1;
+            info.nextLevelStr = isAr ? ("ترقية إلى المستوى " + std::to_string(nextLvl) + " / 3") : ("Upgrade to Level " + std::to_string(nextLvl) + " / 3");
+            int curSpdBonus = static_cast<int>(lighthouse.getPlayerSpeedBonus());
+            int nextSpdBonus = curSpdBonus + 28;
+            info.currentStatStr = isAr ? ("علاوة السرعة الحالية: +" + std::to_string(curSpdBonus)) : ("Current Speed Bonus: +" + std::to_string(curSpdBonus));
+            info.nextStatStr = isAr ? ("المستوى التالي: +" + std::to_string(nextSpdBonus) + " سرعة وتفادٍ أسرع بـ 0.18 ث") : ("Next Level: +" + std::to_string(nextSpdBonus) + " Speed & -0.18s Dash CD");
+            info.costWood = (lighthouse.swiftBootsLevel == 1) ? 15 : 25;
+            info.costOil = (lighthouse.swiftBootsLevel == 1) ? 10 : 18;
+        }
+        break;
+    }
+
+    return info;
 }
 
 std::vector<std::string> Localization::getJournalLines() const {
@@ -268,8 +491,8 @@ void Localization::initStrings() {
     m_stringsEN["FUEL"] = "Fuel:";
     m_stringsEN["ALTARS"] = "Altars:";
     m_stringsEN["MSG_WELCOME"] = "Welcome Keeper! Gather resources by day, survive the Shadow Tide by night.";
-    m_stringsEN["MSG_DUSK"] = "DUSK FALLS! The Shadow Tide approaches in moments...";
-    m_stringsEN["MSG_NIGHT"] = "NIGHTFALL! Survive the horde and protect the Lighthouse!";
+    m_stringsEN["MSG_DUSK"] = "DUSK FALLS! Prepare defenses, reposition mirrors, and refuel before nightfall.";
+    m_stringsEN["MSG_NIGHT"] = "NIGHTFALL! The horde arrives! Protect the Lighthouse!";
     m_stringsEN["MSG_DAWN"] = "DAWN HAS BROKEN! The shadows dissolve into ash.";
     m_stringsEN["MSG_BOSS"] = "THE ABYSSAL LEVIATHAN EMERGES FROM THE TIDE!";
     m_stringsEN["MSG_NEW_DAY"] = "Day %d: Gather resources and prepare defenses.";
@@ -289,6 +512,10 @@ void Localization::initStrings() {
     m_stringsEN["MSG_MANNED"] = "MANNING TOWER CONSOLE! Aim with mouse.";
     m_stringsEN["MSG_DISMOUNTED"] = "Dismounted tower.";
     m_stringsEN["MSG_OVERHEATED"] = "BEACON OVERHEATED! Cooling down...";
+    m_stringsEN["ALERT_HP_CRITICAL"] = "CRITICAL: Lighthouse Integrity Failing (< 25%)!";
+    m_stringsEN["ALERT_HP_LOW"] = "WARNING: Lighthouse taking heavy damage (< 50%)!";
+    m_stringsEN["ALERT_FUEL_CRITICAL"] = "CRITICAL: Lighthouse Fuel Exhaustion Imminent (< 15%)!";
+    m_stringsEN["ALERT_FUEL_LOW"] = "WARNING: Low Lighthouse Fuel (< 30%)!";
     m_stringsEN["SETTINGS_TITLE"] = "GAME SETTINGS & OPTIONS";
     m_stringsEN["SETTINGS_LANGUAGE"] = "Language:";
     m_stringsEN["SETTINGS_FULLSCREEN"] = "Display Mode:";
@@ -313,8 +540,8 @@ void Localization::initStrings() {
     m_stringsAR["FUEL"] = "الوقود:";
     m_stringsAR["ALTARS"] = "المذابح المشعلة:";
     m_stringsAR["MSG_WELCOME"] = "مرحباً بك أيها الحارس! اجمع الموارد نهاراً ودافع ضد المد الظلي ليلاً.";
-    m_stringsAR["MSG_DUSK"] = "حلول الغسق! كائنات الظل تقترب من الشواطئ...";
-    m_stringsAR["MSG_NIGHT"] = "حل الظلام الدامس! اصمد ودافع عن شعلة المنارة!";
+    m_stringsAR["MSG_DUSK"] = "حلول الغسق! استعد للظلام: حصّن دفاعاتك، وزّع المرايا، وزوّد الوقود.";
+    m_stringsAR["MSG_NIGHT"] = "حل الظلام الدامس! جحافل الظل تهاجم، اصمد ودافع عن شعلة المنارة!";
     m_stringsAR["MSG_DAWN"] = "انبلج الفجر! تبددت كائنات الظل إلى رماد.";
     m_stringsAR["MSG_BOSS"] = "وحش الأعماق العظيم يخرج من المياه المظلمة!";
     m_stringsAR["MSG_NEW_DAY"] = "اليوم %d: اجمع الموارد وحصّن دفاعاتك.";
@@ -334,6 +561,10 @@ void Localization::initStrings() {
     m_stringsAR["MSG_MANNED"] = "أنت الآن تتحكم ببرج المنارة! صوّب بالفأرة.";
     m_stringsAR["MSG_DISMOUNTED"] = "نزلت من البرج إلى الأرض.";
     m_stringsAR["MSG_OVERHEATED"] = "حرارة مفرطة في المنارة! انتظر حتى تبرد...";
+    m_stringsAR["ALERT_HP_CRITICAL"] = "تحذير حرج: سلامة هيكل المنارة في خطر شديد (< 25%)!";
+    m_stringsAR["ALERT_HP_LOW"] = "تحذير: المنارة تتعرض لأضرار بالغة (< 50%)!";
+    m_stringsAR["ALERT_FUEL_CRITICAL"] = "تحذير حرج: وقود المنارة قارب على النفاد التام (< 15%)!";
+    m_stringsAR["ALERT_FUEL_LOW"] = "تحذير: منسوب وقود المنارة منخفض (< 30%)!";
     m_stringsAR["SETTINGS_TITLE"] = "إعدادات اللعبة والخيارات";
     m_stringsAR["SETTINGS_LANGUAGE"] = "لغة اللعبة:";
     m_stringsAR["SETTINGS_FULLSCREEN"] = "نمط العرض:";

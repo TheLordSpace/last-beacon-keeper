@@ -23,8 +23,9 @@ void Player::handleInput(const Uint8* keystate, const Vec2& mouseWorld) {
         m_dashDir = moveDir;
     }
 
+    float effectiveSpeed = m_speed + speedBonus;
     if (m_dashTimer <= 0.0f) {
-        m_vel = moveDir * m_speed;
+        m_vel = moveDir * effectiveSpeed;
     }
 
     // Aim angle towards mouse
@@ -35,10 +36,12 @@ void Player::handleInput(const Uint8* keystate, const Vec2& mouseWorld) {
 }
 
 void Player::tryDash() {
+    float effectiveCooldown = std::max(0.45f, 0.9f - dashCooldownBonus);
     if (m_dashCooldown <= 0.0f && m_dashTimer <= 0.0f) {
         m_dashTimer = 0.22f;
-        m_dashCooldown = 0.9f;
-        m_vel = m_dashDir * (m_speed * 2.8f);
+        m_dashCooldown = effectiveCooldown;
+        float effectiveSpeed = m_speed + speedBonus;
+        m_vel = m_dashDir * (effectiveSpeed * 2.8f);
         m_invulnTimer = 0.25f;
         AudioManager::instance().playSound(SoundID::PlayerDash, 0.6f);
 
@@ -93,7 +96,13 @@ void Player::swingTool(IslandMap& map, std::vector<Enemy>& enemies) {
     for (auto& e : enemies) {
         if (e.isDead()) continue;
         if ((e.getPos() - hitCenter).length() <= (hitRadius + e.getRadius())) {
-            e.takeDamage(28.0f, false);
+            float meleeDmg = 30.0f;
+            if (e.getType() == EnemyType::Brute) {
+                meleeDmg = 12.0f; // Armor-plated shadow, heavily resists melee; requires light beam
+            } else if (e.getType() == EnemyType::Leviathan) {
+                meleeDmg = 10.0f;
+            }
+            e.takeDamage(meleeDmg, false);
             Vec2 knockbackDir = (e.getPos() - m_pos).normalized();
             if (knockbackDir.lengthSq() < 0.001f) {
                 knockbackDir = Vec2::fromAngle(m_aimAngle);

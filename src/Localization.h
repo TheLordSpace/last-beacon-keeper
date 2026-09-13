@@ -10,6 +10,23 @@ enum class Language {
     Arabic
 };
 
+class Player;
+class Lighthouse;
+
+struct WorkshopItemInfo {
+    std::string name;
+    std::string category;
+    std::string currentLevelStr;
+    std::string nextLevelStr;
+    std::string currentStatStr;
+    std::string nextStatStr;
+    int costWood = 0;
+    int costCrystals = 0;
+    int costOil = 0;
+    bool isMaxed = false;
+    bool isUpgrade = false;
+};
+
 class Localization {
 public:
     static Localization& instance();
@@ -36,7 +53,8 @@ public:
     std::string getControlsText() const;
     std::string getWorkshopTitle() const;
     std::string getWorkshopSubtitle() const;
-    std::vector<std::string> getWorkshopItems() const;
+    std::vector<std::string> getWorkshopItems(const Lighthouse& lighthouse, const Player& player) const;
+    WorkshopItemInfo getWorkshopItemInfo(int index, const Lighthouse& lighthouse, const Player& player) const;
     std::vector<std::string> getJournalLines() const;
 
 private:

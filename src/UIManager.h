@@ -37,12 +37,15 @@ public:
         const DayNightManager& dayNight
     );
 
-    void renderWorkshop(int selectedIndex);
+    void renderWorkshop(int selectedIndex, const Player& player, const Lighthouse& lighthouse);
     void renderJournal();
     void renderSettings(int selectedIndex, bool fullscreen, int soundVolumePercent);
     void renderPaused();
     void renderGameOver();
     void renderVictory();
+
+    void renderDawnSummary(const DawnReward& r, int nextDay);
+    void renderWaveTelegraph(const WavePreview& preview);
 
 private:
     SDL_Renderer* m_renderer = nullptr;

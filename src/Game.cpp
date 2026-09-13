@@ -148,6 +148,8 @@ void Game::placeMirror() {
     m.id = static_cast<int>(m_mirrors.size()) + 1;
     m.pos = placePos;
     m.angle = m_player.getAimAngle() + PI * 0.5f;
+    m.maxHealth = m_lighthouse.getMirrorMaxHealth();
+    m.health = m.maxHealth;
     m_mirrors.push_back(m);
 
     m_player.mirrorsInBag--;
@@ -321,6 +323,113 @@ void Game::buyWorkshopItem(int index) {
             setStatus(isAr ? "يلزم 5 خشب و 5 بلورات!" : "Needs 5 Wood, 5 Crystals!", 2.5f);
         }
         break;
+
+    case 7: // Beam Power Upgrade (Max 3)
+        if (m_lighthouse.beamPowerLevel >= 3) {
+            setStatus(isAr ? "تم بلوغ المستوى الأقصى لقوة الشعاع!" : "Beam Power is already at MAX level!", 2.5f);
+        } else {
+            int needCry = (m_lighthouse.beamPowerLevel == 1) ? 20 : 30;
+            int needWood = (m_lighthouse.beamPowerLevel == 1) ? 10 : 15;
+            if (m_player.crystals >= needCry && m_player.wood >= needWood) {
+                m_player.crystals -= needCry;
+                m_player.wood -= needWood;
+                m_lighthouse.beamPowerLevel++;
+                AudioManager::instance().playSound(SoundID::Craft, 0.9f);
+                setStatus(isAr ? ("تمت ترقية قوة الشعاع إلى المستوى " + std::to_string(m_lighthouse.beamPowerLevel) + "! (+25% ضرر)") :
+                                 ("Upgraded Beam Power to Level " + std::to_string(m_lighthouse.beamPowerLevel) + "! (+25% Damage)"), 3.5f);
+            } else {
+                setStatus(isAr ? ("الموارد غير كافية! يلزم " + std::to_string(needCry) + " بلورات و " + std::to_string(needWood) + " خشب") :
+                                 ("Not enough materials! Needs " + std::to_string(needCry) + " Crystals, " + std::to_string(needWood) + " Wood"), 2.5f);
+            }
+        }
+        break;
+
+    case 8: // Beam Efficiency Upgrade (Max 3)
+        if (m_lighthouse.beamEfficiencyLevel >= 3) {
+            setStatus(isAr ? "تم بلوغ المستوى الأقصى لكفاءة الوقود!" : "Beam Efficiency is already at MAX level!", 2.5f);
+        } else {
+            int needCry = (m_lighthouse.beamEfficiencyLevel == 1) ? 15 : 25;
+            int needOil = (m_lighthouse.beamEfficiencyLevel == 1) ? 10 : 18;
+            if (m_player.crystals >= needCry && m_player.oil >= needOil) {
+                m_player.crystals -= needCry;
+                m_player.oil -= needOil;
+                m_lighthouse.beamEfficiencyLevel++;
+                AudioManager::instance().playSound(SoundID::Craft, 0.9f);
+                setStatus(isAr ? ("تمت ترقية كفاءة الوقود إلى المستوى " + std::to_string(m_lighthouse.beamEfficiencyLevel) + "! (-25% استهلاك)") :
+                                 ("Upgraded Beam Efficiency to Level " + std::to_string(m_lighthouse.beamEfficiencyLevel) + "! (-25% Fuel Drain)"), 3.5f);
+            } else {
+                setStatus(isAr ? ("الموارد غير كافية! يلزم " + std::to_string(needCry) + " بلورات و " + std::to_string(needOil) + " وقود") :
+                                 ("Not enough materials! Needs " + std::to_string(needCry) + " Crystals, " + std::to_string(needOil) + " Oil"), 2.5f);
+            }
+        }
+        break;
+
+    case 9: // Mirror Durability Upgrade (Max 3)
+        if (m_lighthouse.mirrorDurabilityLevel >= 3) {
+            setStatus(isAr ? "تم بلوغ المستوى الأقصى لصلابة المرايا!" : "Mirror Durability is already at MAX level!", 2.5f);
+        } else {
+            int needWood = (m_lighthouse.mirrorDurabilityLevel == 1) ? 15 : 25;
+            int needCry = (m_lighthouse.mirrorDurabilityLevel == 1) ? 10 : 15;
+            if (m_player.wood >= needWood && m_player.crystals >= needCry) {
+                m_player.wood -= needWood;
+                m_player.crystals -= needCry;
+                m_lighthouse.mirrorDurabilityLevel++;
+                float newMax = m_lighthouse.getMirrorMaxHealth();
+                for (auto& mir : m_mirrors) {
+                    float diff = newMax - mir.maxHealth;
+                    mir.maxHealth = newMax;
+                    mir.health += diff;
+                }
+                AudioManager::instance().playSound(SoundID::Craft, 0.9f);
+                setStatus(isAr ? ("تمت ترقية متانة المرايا إلى المستوى " + std::to_string(m_lighthouse.mirrorDurabilityLevel) + "! (صحة المرآة: " + std::to_string((int)newMax) + ")") :
+                                 ("Upgraded Mirror Durability to Level " + std::to_string(m_lighthouse.mirrorDurabilityLevel) + "! (Mirror HP: " + std::to_string((int)newMax) + ")"), 3.5f);
+            } else {
+                setStatus(isAr ? ("الموارد غير كافية! يلزم " + std::to_string(needWood) + " خشب و " + std::to_string(needCry) + " بلورات") :
+                                 ("Not enough materials! Needs " + std::to_string(needWood) + " Wood, " + std::to_string(needCry) + " Crystals"), 2.5f);
+            }
+        }
+        break;
+
+    case 10: // Lighthouse Armor Upgrade (Max 3)
+        if (m_lighthouse.lighthouseArmorLevel >= 3) {
+            setStatus(isAr ? "تم بلوغ المستوى الأقصى لدروع المنارة!" : "Lighthouse Armor is already at MAX level!", 2.5f);
+        } else {
+            int needWood = (m_lighthouse.lighthouseArmorLevel == 1) ? 25 : 40;
+            int needCry = (m_lighthouse.lighthouseArmorLevel == 1) ? 20 : 35;
+            if (m_player.wood >= needWood && m_player.crystals >= needCry) {
+                m_player.wood -= needWood;
+                m_player.crystals -= needCry;
+                m_lighthouse.upgradeLighthouseArmor();
+                AudioManager::instance().playSound(SoundID::Craft, 0.9f);
+                setStatus(isAr ? ("تمت ترقية دروع المنارة إلى المستوى " + std::to_string(m_lighthouse.lighthouseArmorLevel) + "! (أقصى صحة: " + std::to_string((int)m_lighthouse.getMaxHealth()) + ")") :
+                                 ("Upgraded Lighthouse Armor to Level " + std::to_string(m_lighthouse.lighthouseArmorLevel) + "! (Max HP: " + std::to_string((int)m_lighthouse.getMaxHealth()) + ")"), 3.5f);
+            } else {
+                setStatus(isAr ? ("الموارد غير كافية! يلزم " + std::to_string(needWood) + " خشب و " + std::to_string(needCry) + " بلورات") :
+                                 ("Not enough materials! Needs " + std::to_string(needWood) + " Wood, " + std::to_string(needCry) + " Crystals"), 2.5f);
+            }
+        }
+        break;
+
+    case 11: // Swift Boots Upgrade (Max 3)
+        if (m_lighthouse.swiftBootsLevel >= 3) {
+            setStatus(isAr ? "تم بلوغ المستوى الأقصى لحذاء الحارس!" : "Swift Boots are already at MAX level!", 2.5f);
+        } else {
+            int needWood = (m_lighthouse.swiftBootsLevel == 1) ? 15 : 25;
+            int needOil = (m_lighthouse.swiftBootsLevel == 1) ? 10 : 18;
+            if (m_player.wood >= needWood && m_player.oil >= needOil) {
+                m_player.wood -= needWood;
+                m_player.oil -= needOil;
+                m_lighthouse.swiftBootsLevel++;
+                m_player.setBonuses(m_lighthouse.getPlayerSpeedBonus(), m_lighthouse.getPlayerDashCooldownBonus());
+                AudioManager::instance().playSound(SoundID::Craft, 0.9f);
+                setStatus(isAr ? ("تمت ترقية حذاء الحارس إلى المستوى " + std::to_string(m_lighthouse.swiftBootsLevel) + "! (+سرعة وتفادٍ أسرع)") :
+                                 ("Upgraded Swift Boots to Level " + std::to_string(m_lighthouse.swiftBootsLevel) + "! (+Speed & Faster Dash)"), 3.5f);
+            } else {
+                setStatus(isAr ? ("الموارد غير كافية! يلزم " + std::to_string(needWood) + " خشب و " + std::to_string(needOil) + " وقود") :
+                                 ("Not enough materials! Needs " + std::to_string(needWood) + " Wood, " + std::to_string(needOil) + " Oil"), 2.5f);
+            }
+        }
+        break;
     }
 }
 
@@ -426,11 +535,11 @@ void Game::settingsClick() {
 }
 
 void Game::workshopNavigateUp() {
-    m_workshopSelected = (m_workshopSelected - 1 + 7) % 7;
+    m_workshopSelected = (m_workshopSelected - 1 + 12) % 12;
 }
 
 void Game::workshopNavigateDown() {
-    m_workshopSelected = (m_workshopSelected + 1) % 7;
+    m_workshopSelected = (m_workshopSelected + 1) % 12;
 }
 
 void Game::workshopConfirm() {
@@ -444,6 +553,7 @@ void Game::restartGame() {
     m_enemies.clear();
     m_mirrors.clear();
     PlacedMirror im1; im1.id = 1; im1.pos = Vec2(1100.0f, 1020.0f); im1.angle = -PI * 0.25f;
+    im1.maxHealth = im1.health = m_lighthouse.getMirrorMaxHealth();
     m_mirrors.push_back(im1);
     m_dayNight.resetGame();
     m_state = GameState::Playing;
@@ -475,6 +585,7 @@ void Game::update(float dt) {
     Vec2 mouseWorld = Vec2(lx, ly) + m_cameraPos;
 
     const Uint8* keystate = SDL_GetKeyboardState(nullptr);
+    m_player.setBonuses(m_lighthouse.getPlayerSpeedBonus(), m_lighthouse.getPlayerDashCooldownBonus());
     m_player.handleInput(keystate, mouseWorld);
 
     m_player.update(dt, m_map);
@@ -704,7 +815,7 @@ void Game::render() {
     );
 
     if (m_state == GameState::Workshop) {
-        m_ui.renderWorkshop(m_workshopSelected);
+        m_ui.renderWorkshop(m_workshopSelected, m_player, m_lighthouse);
     } else if (m_state == GameState::Journal) {
         m_ui.renderJournal();
     } else if (m_state == GameState::Settings) {

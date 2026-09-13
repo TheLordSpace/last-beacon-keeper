@@ -19,6 +19,11 @@ void DayNightManager::init() {
     m_totalEnemiesDefeated = 0;
     m_lastDawnReward = DawnReward();
     m_waveManager.resetForDay(1);
+
+    m_fuelAlertCooldown = 0.0f;
+    m_lastFuelThreshold = 0;
+    m_hpAlertCooldown = 0.0f;
+    m_lastHpThreshold = 0;
 }
 
 void DayNightManager::resetGame() {
@@ -68,14 +73,31 @@ ColorRGBA DayNightManager::getAmbientColor() const {
     };
 }
 
+WavePreview DayNightManager::getUpcomingWavePreview() const {
+    if (m_phase == DayPhase::Dusk) {
+        float duskTimeLeft = std::max(0.0f, m_phaseDuration - m_phaseTimer);
+        return m_waveManager.getUpcomingWavePreview(m_dayNumber, duskTimeLeft);
+    } else if (m_phase == DayPhase::Night) {
+        return m_waveManager.getUpcomingWavePreview(m_dayNumber, -1.0f);
+    }
+    WavePreview empty;
+    empty.active = false;
+    return empty;
+}
+
 void DayNightManager::calculateDawnReward(
     const Lighthouse& lighthouse,
     const std::vector<PlacedMirror>& mirrors,
     Player& player
 ) {
     m_lastDawnReward = DawnReward();
+    m_lastDawnReward.dayNumber = m_dayNumber;
+    m_lastDawnReward.wavesCompleted = m_waveManager.getWavesCompleted();
+    m_lastDawnReward.totalWaves = m_waveManager.getTotalWaves();
     m_lastDawnReward.enemiesDefeated = m_waveManager.getEnemiesDefeatedThisNight();
     m_lastDawnReward.mirrorsPreserved = static_cast<int>(mirrors.size());
+    m_lastDawnReward.lighthouseHp = lighthouse.getHealth();
+    m_lastDawnReward.lighthouseMaxHp = lighthouse.getMaxHealth();
     m_lastDawnReward.lighthouseHpPercent = (lighthouse.getHealth() / lighthouse.getMaxHealth()) * 100.0f;
     m_lastDawnReward.fuelRemaining = lighthouse.getFuel();
 
@@ -86,11 +108,11 @@ void DayNightManager::calculateDawnReward(
     m_lastDawnReward.salves = 1;
 
     // Defeated enemies bonus
-    if (m_lastDawnReward.enemiesDefeated >= 10) {
+    if (m_lastDawnReward.enemiesDefeated >= 8) {
         m_lastDawnReward.wood += 4;
         m_lastDawnReward.crystals += 3;
     }
-    if (m_lastDawnReward.enemiesDefeated >= 18) {
+    if (m_lastDawnReward.enemiesDefeated >= 16) {
         m_lastDawnReward.wood += 4;
         m_lastDawnReward.crystals += 4;
         m_lastDawnReward.oil += 6;
@@ -208,6 +230,56 @@ void DayNightManager::update(
     }
     if (m_lighthouseHurtAlertTimer > 0.0f) {
         m_lighthouseHurtAlertTimer -= dt;
+    }
+
+    // Lighthouse HP danger feedback
+    if (m_hpAlertCooldown > 0.0f) {
+        m_hpAlertCooldown -= dt;
+    }
+    float hpPercent = (lighthouse.getHealth() / lighthouse.getMaxHealth()) * 100.0f;
+    if (hpPercent < 25.0f && lighthouse.getHealth() > 0.0f) {
+        if (m_lastHpThreshold != 2 || m_hpAlertCooldown <= 0.0f) {
+            m_lastHpThreshold = 2;
+            m_hpAlertCooldown = 10.0f;
+            statusOut = Localization::instance().get("ALERT_HP_CRITICAL");
+            statusTimerOut = 4.0f;
+            AudioManager::instance().playSound(SoundID::NightAlarm, 1.0f);
+        }
+    } else if (hpPercent < 50.0f && lighthouse.getHealth() > 0.0f) {
+        if (m_lastHpThreshold < 1 || m_hpAlertCooldown <= 0.0f) {
+            m_lastHpThreshold = 1;
+            m_hpAlertCooldown = 14.0f;
+            statusOut = Localization::instance().get("ALERT_HP_LOW");
+            statusTimerOut = 3.5f;
+            AudioManager::instance().playSound(SoundID::NightAlarm, 0.8f);
+        }
+    } else if (hpPercent >= 55.0f) {
+        m_lastHpThreshold = 0;
+    }
+
+    // Low fuel feedback
+    if (m_fuelAlertCooldown > 0.0f) {
+        m_fuelAlertCooldown -= dt;
+    }
+    float fuelPercent = (lighthouse.getFuel() / lighthouse.getMaxFuel()) * 100.0f;
+    if (fuelPercent < 15.0f && lighthouse.getFuel() > 0.0f) {
+        if (m_lastFuelThreshold != 2 || m_fuelAlertCooldown <= 0.0f) {
+            m_lastFuelThreshold = 2;
+            m_fuelAlertCooldown = 12.0f;
+            statusOut = Localization::instance().get("ALERT_FUEL_CRITICAL");
+            statusTimerOut = 4.0f;
+            AudioManager::instance().playSound(SoundID::NightAlarm, 0.9f);
+        }
+    } else if (fuelPercent < 30.0f && lighthouse.getFuel() > 0.0f) {
+        if (m_lastFuelThreshold < 1 || m_fuelAlertCooldown <= 0.0f) {
+            m_lastFuelThreshold = 1;
+            m_fuelAlertCooldown = 16.0f;
+            statusOut = Localization::instance().get("ALERT_FUEL_LOW");
+            statusTimerOut = 3.5f;
+            AudioManager::instance().playSound(SoundID::NightAlarm, 0.75f);
+        }
+    } else if (fuelPercent >= 35.0f) {
+        m_lastFuelThreshold = 0;
     }
 
     switch (m_phase) {

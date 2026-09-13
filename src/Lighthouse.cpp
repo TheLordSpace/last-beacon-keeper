@@ -162,7 +162,7 @@ void Lighthouse::update(float dt, std::vector<Enemy>& enemies, std::vector<Place
 
     // Heat & Fuel management
     if (m_fuel > 0.0f) {
-        float fuelDrainRate = m_manned ? 1.5f : 0.8f;
+        float fuelDrainRate = (m_manned ? 1.5f : 0.8f) * getFuelDrainMultiplier();
         m_fuel = std::max(0.0f, m_fuel - fuelDrainRate * dt);
 
         if (m_manned) {
@@ -187,7 +187,7 @@ void Lighthouse::update(float dt, std::vector<Enemy>& enemies, std::vector<Place
     // Calculate light raycast and reflections
     calculateBeams(mirrors);
 
-    float baseDamage = (m_currentLens == LensType::Focused ? 85.0f : 45.0f) * (1.0f + (beamLevel - 1) * 0.4f);
+    float baseDamage = (m_currentLens == LensType::Focused ? 85.0f : 45.0f) * getBeamDamageMultiplier();
 
     // Test beam segments against all enemies
     for (const auto& seg : m_beamSegments) {
