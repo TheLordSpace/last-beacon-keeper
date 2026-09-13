@@ -9,6 +9,7 @@ SRC = src/main.cpp \
       src/Map.cpp \
       src/Entities.cpp \
       src/Lighthouse.cpp \
+      src/UIManager.cpp \
       src/Game.cpp
 
 OBJ = $(SRC:.cpp=.o)

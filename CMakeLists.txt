@@ -19,6 +19,7 @@ add_executable(beacon_keeper
     src/Map.cpp
     src/Entities.cpp
     src/Lighthouse.cpp
+    src/UIManager.cpp
     src/Game.cpp
 )
 

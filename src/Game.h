@@ -5,8 +5,8 @@
 #include "Entities.h"
 #include "Lighthouse.h"
 #include "Localization.h"
+#include "UIManager.h"
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <vector>
 #include <string>
 
@@ -18,12 +18,6 @@ enum class GameState {
     Paused,
     GameOver,
     Victory
-};
-
-enum class FontSize {
-    Small,
-    Medium,
-    Large
 };
 
 class Game {
@@ -41,18 +35,11 @@ private:
     SDL_Texture* m_lightTexture = nullptr;
     SDL_Texture* m_radialLightTexture = nullptr;
 
-    // Fonts: English
-    TTF_Font* m_fontEnSmall = nullptr;
-    TTF_Font* m_fontEnMedium = nullptr;
-    TTF_Font* m_fontEnLarge = nullptr;
-
-    // Fonts: Arabic
-    TTF_Font* m_fontArSmall = nullptr;
-    TTF_Font* m_fontArMedium = nullptr;
-    TTF_Font* m_fontArLarge = nullptr;
-
     bool m_running = true;
     GameState m_state = GameState::Playing;
+
+    // UI and HUD Subsystem
+    UIManager m_ui;
 
     // Game Objects
     IslandMap m_map;
@@ -80,8 +67,6 @@ private:
     int m_settingsSelected = 0;
     int m_soundVolumePercent = 70;
     bool m_fullscreen = false;
-    std::string m_statusMessage = "";
-    float m_statusMessageTimer = 0.0f;
 
     void toggleFullscreen();
 
@@ -93,19 +78,11 @@ private:
     void updateDayNight(float dt);
     void spawnNightEnemies(float dt);
 
-    void renderHUD();
     void renderLightingPass();
     void renderMirrors();
-    void renderWorkshop();
-    void renderJournal();
-    void renderSettings();
-    void renderPaused();
-    void renderGameOver();
-    void renderVictory();
 
-    void drawText(const std::string& text, int x, int y, SDL_Color color, FontSize size, bool alignRight = false);
     void drawCircleLight(SDL_Renderer* ren, int cx, int cy, int radius, uint8_t alpha);
-    void setStatus(const std::string& msg, float time = 3.0f);
+    void setStatus(const std::string& msg, float time = 3.0f) { m_ui.setStatus(msg, time); }
 
     void placeMirror();
     void rotateNearbyMirror();
