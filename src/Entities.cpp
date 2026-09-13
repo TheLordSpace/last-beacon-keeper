@@ -94,8 +94,14 @@ void Player::swingTool(IslandMap& map, std::vector<Enemy>& enemies) {
         if (e.isDead()) continue;
         if ((e.getPos() - hitCenter).length() <= (hitRadius + e.getRadius())) {
             e.takeDamage(28.0f, false);
-            AudioManager::instance().playSound(SoundID::PlayerHurt, 0.5f);
+            Vec2 knockbackDir = (e.getPos() - m_pos).normalized();
+            if (knockbackDir.lengthSq() < 0.001f) {
+                knockbackDir = Vec2::fromAngle(m_aimAngle);
+            }
+            e.applyHitReaction(knockbackDir);
+            AudioManager::instance().playSound(SoundID::EnemyHurt, 0.6f);
             ParticleSystem::instance().spawnShadowBurst(e.getPos(), 10);
+            ParticleSystem::instance().spawnSparks(e.getPos(), 6, ColorRGBA{ 255, 230, 150, 255 });
         }
     }
 }
@@ -258,15 +264,58 @@ void Enemy::takeDamage(float dmg, bool isLight) {
     }
 }
 
+void Enemy::applyHitReaction(const Vec2& knockbackDir) {
+    if (m_health <= 0.0f) return;
+
+    m_hitFlashTimer = 0.12f;
+    m_stunTimer = 0.14f;
+
+    float knockbackForce = 160.0f;
+    switch (m_type) {
+    case EnemyType::Crawler:
+        knockbackForce = 180.0f;
+        break;
+    case EnemyType::Eater:
+        knockbackForce = 130.0f;
+        break;
+    case EnemyType::Brute:
+        knockbackForce = 65.0f;
+        break;
+    case EnemyType::Leviathan:
+        knockbackForce = 20.0f;
+        break;
+    }
+
+    m_vel = knockbackDir * knockbackForce;
+}
+
 void Enemy::update(float dt, const Vec2& playerPos, const Vec2& lighthousePos,
                    std::vector<PlacedMirror>& mirrors, const IslandMap& map) {
     (void)map;
     if (m_burnTimer > 0.0f) {
         m_burnTimer -= dt;
     }
+    if (m_hitFlashTimer > 0.0f) {
+        m_hitFlashTimer -= dt;
+    }
     if (m_attackCooldown > 0.0f) {
         m_attackCooldown -= dt;
     }
+
+    // Apply knockback movement with smooth friction dampening
+    if (m_vel.lengthSq() > 1.0f) {
+        m_pos += m_vel * dt;
+        m_vel -= m_vel * (dt * 12.0f);
+    } else {
+        m_vel = Vec2(0.0f, 0.0f);
+    }
+
+    // Hit stun halts regular movement and animation briefly
+    if (m_stunTimer > 0.0f) {
+        m_stunTimer -= dt;
+        return;
+    }
+
     m_animTimer += dt * 4.0f;
 
     Vec2 target = lighthousePos;
@@ -330,10 +379,15 @@ void Enemy::render(SDL_Renderer* ren, const Vec2& cameraOffset) {
 
     // Shadow pulse
     float pulse = 1.0f + 0.1f * std::sin(m_animTimer);
+    if (m_hitFlashTimer > 0.0f) {
+        pulse *= 1.18f; // brief impact flinch expansion
+    }
 
-    // Color: Deep dark void black, burning orange/purple if being hit
+    // Color: Deep dark void black, bright flash on melee hit, burning orange if in beam
     uint8_t r = 18, g = 12, b = 28;
-    if (m_burnTimer > 0.0f) {
+    if (m_hitFlashTimer > 0.0f) {
+        r = 255; g = 225; b = 225;
+    } else if (m_burnTimer > 0.0f) {
         r = 240; g = 110; b = 40;
     }
 
@@ -344,7 +398,11 @@ void Enemy::render(SDL_Renderer* ren, const Vec2& cameraOffset) {
     SDL_RenderFillRect(ren, &bodyRect);
 
     // Glowing Eyes
-    SDL_SetRenderDrawColor(ren, (m_burnTimer > 0.0f) ? 255 : 220, (m_burnTimer > 0.0f) ? 255 : 30, 40, 255);
+    if (m_hitFlashTimer > 0.0f) {
+        SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
+    } else {
+        SDL_SetRenderDrawColor(ren, (m_burnTimer > 0.0f) ? 255 : 220, (m_burnTimer > 0.0f) ? 255 : 30, 40, 255);
+    }
     int eyeOff = (int)(m_radius * 0.35f);
     SDL_Rect eyeL{ (int)sx - eyeOff - 3, (int)sy - eyeOff, 4, 4 };
     SDL_Rect eyeR{ (int)sx + eyeOff - 1, (int)sy - eyeOff, 4, 4 };

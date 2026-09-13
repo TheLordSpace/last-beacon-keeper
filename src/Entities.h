@@ -43,6 +43,7 @@ public:
                 std::vector<PlacedMirror>& mirrors, const IslandMap& map);
     void render(SDL_Renderer* ren, const Vec2& cameraOffset);
     void takeDamage(float dmg, bool isLight);
+    void applyHitReaction(const Vec2& knockbackDir);
 
     bool isDead() const { return m_health <= 0.0f; }
     EnemyType getType() const { return m_type; }
@@ -66,6 +67,7 @@ private:
     float m_animTimer = 0.0f;
     float m_burnTimer = 0.0f;
     float m_stunTimer = 0.0f;
+    float m_hitFlashTimer = 0.0f;
 };
 
 class Player {
