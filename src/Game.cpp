@@ -171,7 +171,7 @@ void Game::rotateNearbyMirror() {
     if (closest) {
         closest->angle += PI * 0.25f;
         if (closest->angle >= 6.28318f) closest->angle -= 6.28318f;
-        closest->rotateFeedbackTimer = 0.22f;
+        closest->rotateFeedbackTimer = 0.25f;
 
         AudioManager::instance().playSound(SoundID::MirrorReflect, 0.5f);
 
@@ -182,7 +182,7 @@ void Game::rotateNearbyMirror() {
             Vec2 pos = closest->pos + dir * 14.0f;
             Vec2 vel = dir * 40.0f;
             ColorRGBA col{ 180, 235, 255, 240 };
-            ParticleSystem::instance().spawn(pos, vel, col, 0.22f, 2.5f, true);
+            ParticleSystem::instance().spawn(pos, vel, col, 0.25f, 2.5f, true);
         }
 
         // Endpoint sparks indicating newly aligned reflective surface
@@ -743,7 +743,8 @@ void Game::renderLightingPass() {
 
         // Wide light illumination corridor
         SDL_Color wideMask = { 255, 248, 200, 235 };
-        drawThickBeam(m_renderer, p1, p2, seg.width * 2.6f, wideMask);
+        float wideWidth = seg.width * (2.6f + (seg.pulse > 0.0f ? 1.2f * seg.pulse : 0.0f));
+        drawThickBeam(m_renderer, p1, p2, wideWidth, wideMask);
 
         // Core bright illumination
         SDL_Color coreMask = { 255, 255, 255, 255 };

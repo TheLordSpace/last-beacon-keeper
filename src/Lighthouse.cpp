@@ -57,6 +57,7 @@ void Lighthouse::calculateBeams(std::vector<PlacedMirror>& mirrors) {
         Vec2 curDir = Vec2::fromAngle(initialAngle);
         float remainingDist = 950.0f;
         int maxBounces = 4;
+        float currentPulse = 0.0f;
 
         for (int bounce = 0; bounce < maxBounces; ++bounce) {
             Vec2 curEnd = curStart + curDir * remainingDist;
@@ -85,7 +86,17 @@ void Lighthouse::calculateBeams(std::vector<PlacedMirror>& mirrors) {
             seg.end = bestHit;
             seg.width = width;
             seg.color = color;
+            seg.pulse = currentPulse;
             m_beamSegments.push_back(seg);
+
+            // Shimmering light photons along newly redirected beam
+            if (currentPulse > 0.0f && (rand() % 100 < 30)) {
+                float t = (float)(rand() % 90 + 5) / 100.0f;
+                Vec2 pt = curStart + (bestHit - curStart) * t;
+                Vec2 pVel = curDir * 60.0f + Vec2((float)(rand() % 20 - 10), (float)(rand() % 20 - 10));
+                ColorRGBA pCol{ color.r, color.g, color.b, 220 };
+                ParticleSystem::instance().spawn(pt, pVel, pCol, 0.18f, 2.5f, true);
+            }
 
             if (hitMirror) {
                 // Reflect ray
@@ -97,6 +108,23 @@ void Lighthouse::calculateBeams(std::vector<PlacedMirror>& mirrors) {
                 float distUsed = std::sqrt(bestDistSq);
                 remainingDist -= distUsed;
                 curStart = bestHit + curDir * 2.0f; // slight nudge
+
+                // If hitMirror was recently rotated, propagate pulse to the reflected beam
+                if (hitMirror->rotateFeedbackTimer > 0.0f) {
+                    float mirrorPulse = std::clamp(hitMirror->rotateFeedbackTimer / 0.25f, 0.0f, 1.0f);
+                    currentPulse = std::max(currentPulse, mirrorPulse);
+
+                    // Forward sparkle burst along new reflected beam direction on initial rotation
+                    if (hitMirror->rotateFeedbackTimer > 0.20f) {
+                        for (int s = 0; s < 4; ++s) {
+                            float sparkAngle = curDir.angle() + ((float)(rand() % 40 - 20) / 100.0f);
+                            float speed = 100.0f + (float)(rand() % 80);
+                            Vec2 vel = Vec2::fromAngle(sparkAngle, speed);
+                            ColorRGBA sparkCol{ color.r, color.g, color.b, 255 };
+                            ParticleSystem::instance().spawn(bestHit, vel, sparkCol, 0.22f, 2.5f, true);
+                        }
+                    }
+                }
 
                 // Spawn reflection sparks
                 ParticleSystem::instance().spawnBeamSparks(bestHit, curDir);
@@ -272,6 +300,19 @@ void Lighthouse::renderBeams(SDL_Renderer* ren, const Vec2& cameraOffset) {
         // 3. Crisp white laser core quad
         SDL_Color coreCol = { 255, 255, 255, 255 };
         drawThickBeam(ren, p1, p2, std::max(2.5f, seg.width * 0.32f), coreCol);
+
+        // 4. Directional pulse feedback when reflected beam changes direction
+        if (seg.pulse > 0.0f) {
+            // Expanded soft outer glow pulse
+            uint8_t pulseGlowA = static_cast<uint8_t>(110.0f * seg.pulse);
+            SDL_Color pulseGlowCol = { seg.color.r, seg.color.g, seg.color.b, pulseGlowA };
+            drawThickBeam(ren, p1, p2, seg.width * (2.2f + 1.8f * seg.pulse), pulseGlowCol);
+
+            // Bright white energy flash core
+            uint8_t pulseCoreA = static_cast<uint8_t>(200.0f * seg.pulse);
+            SDL_Color pulseCoreCol = { 255, 255, 255, pulseCoreA };
+            drawThickBeam(ren, p1, p2, seg.width * (0.5f + 0.5f * seg.pulse), pulseCoreCol);
+        }
     }
 
     SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);

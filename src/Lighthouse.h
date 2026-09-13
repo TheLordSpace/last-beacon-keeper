@@ -10,6 +10,7 @@ struct BeamSegment {
     Vec2 end;
     float width = 8.0f;
     ColorRGBA color{ 255, 240, 150, 255 };
+    float pulse = 0.0f;
 };
 
 class Lighthouse {
