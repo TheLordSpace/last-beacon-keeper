@@ -1,0 +1,46 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+beacon_keeper
+*.out
+*.exe
+
+# CMake build outputs
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.bak
+build/
+bin/
+
+# Temporary / Scratch directory and test images
+scratch/
+*.bmp
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
