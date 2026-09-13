@@ -26,7 +26,12 @@ public:
     std::string shapeText(const std::string& text) const;
 
     // Localized formatted text helpers
-    std::string getClockText(int day, DayPhase phase, int secondsLeft) const;
+    std::string getClockText(int day, DayPhase phase, int secondsLeft, int currentWave = 0, int totalWaves = 0) const;
+    std::string getWaveBannerText(int currentWave, int totalWaves, bool isBoss) const;
+    std::string getDawnSummaryTitle() const;
+    std::string getDawnSummaryStats(int kills, int hpPercent, int mirrors) const;
+    std::string getDawnSummaryBounty(int wood, int crystals, int oil, int cores, int salves) const;
+    std::string getLighthouseAttackWarning() const;
     std::string getInventoryText(int wood, int crystals, int oil, int mirrors, int cores, int salves) const;
     std::string getControlsText() const;
     std::string getWorkshopTitle() const;

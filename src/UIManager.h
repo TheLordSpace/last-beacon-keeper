@@ -5,6 +5,7 @@
 #include "Lighthouse.h"
 #include "Map.h"
 #include "Localization.h"
+#include "DayNightManager.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <string>
@@ -33,13 +34,7 @@ public:
         const Player& player,
         const Lighthouse& lighthouse,
         const IslandMap& map,
-        int dayNumber,
-        DayPhase phase,
-        float phaseTimer,
-        float dayDuration,
-        float duskDuration,
-        float nightDuration,
-        float dawnDuration
+        const DayNightManager& dayNight
     );
 
     void renderWorkshop(int selectedIndex);

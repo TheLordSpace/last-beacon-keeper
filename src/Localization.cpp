@@ -66,14 +66,20 @@ std::string Localization::get(const std::string& key) const {
     return key;
 }
 
-std::string Localization::getClockText(int day, DayPhase phase, int secondsLeft) const {
+std::string Localization::getClockText(int day, DayPhase phase, int secondsLeft, int currentWave, int totalWaves) const {
     if (m_lang == Language::Arabic) {
         std::string pStr;
         switch (phase) {
-        case DayPhase::Day: pStr = "النهار"; break;
-        case DayPhase::Dusk: pStr = "الغسق (إنذار)"; break;
-        case DayPhase::Night: pStr = "المد الظلي"; break;
-        case DayPhase::Dawn: pStr = "بزوغ الفجر"; break;
+        case DayPhase::Day: pStr = "استكشاف النهار"; break;
+        case DayPhase::Dusk: pStr = "الغسق (استعد للظلام!)"; break;
+        case DayPhase::Night:
+            if (currentWave > 0 && totalWaves > 0) {
+                pStr = "المد الظلي | الموجة " + std::to_string(currentWave) + "/" + std::to_string(totalWaves);
+            } else {
+                pStr = "المد الظلي";
+            }
+            break;
+        case DayPhase::Dawn: pStr = "بزوغ الفجر ومكافأة الصمود"; break;
         }
         std::ostringstream ss;
         ss << "اليوم " << day << " - " << pStr << " (" << secondsLeft << " ث)";
@@ -81,15 +87,71 @@ std::string Localization::getClockText(int day, DayPhase phase, int secondsLeft)
     } else {
         std::string pStr;
         switch (phase) {
-        case DayPhase::Day: pStr = "DAY"; break;
-        case DayPhase::Dusk: pStr = "DUSK (WARNING)"; break;
-        case DayPhase::Night: pStr = "SHADOW TIDE"; break;
-        case DayPhase::Dawn: pStr = "DAWN BREAK"; break;
+        case DayPhase::Day: pStr = "DAY (EXPLORATION)"; break;
+        case DayPhase::Dusk: pStr = "DUSK (PREPARE!)"; break;
+        case DayPhase::Night:
+            if (currentWave > 0 && totalWaves > 0) {
+                pStr = "SHADOW TIDE | WAVE " + std::to_string(currentWave) + "/" + std::to_string(totalWaves);
+            } else {
+                pStr = "SHADOW TIDE";
+            }
+            break;
+        case DayPhase::Dawn: pStr = "DAWN REWARD"; break;
         }
         std::ostringstream ss;
         ss << "Day " << day << " - " << pStr << " (" << secondsLeft << "s)";
         return ss.str();
     }
+}
+
+std::string Localization::getWaveBannerText(int currentWave, int totalWaves, bool isBoss) const {
+    if (m_lang == Language::Arabic) {
+        if (isBoss) {
+            return "وحش الأعماق العظيم يخرج من المياه المظلمة!";
+        }
+        return "انطلاق الموجة " + std::to_string(currentWave) + " من " + std::to_string(totalWaves) + "! احمِ المنارة!";
+    } else {
+        if (isBoss) {
+            return "THE ABYSSAL LEVIATHAN EMERGES FROM THE TIDE!";
+        }
+        return "WAVE " + std::to_string(currentWave) + "/" + std::to_string(totalWaves) + " INCOMING! Defend the Beacon!";
+    }
+}
+
+std::string Localization::getDawnSummaryTitle() const {
+    return (m_lang == Language::Arabic) ? "تم الصمود في الليل بنجاح!" : "NIGHT SURVIVED - DAWN BREAKS!";
+}
+
+std::string Localization::getDawnSummaryStats(int kills, int hpPercent, int mirrors) const {
+    std::ostringstream ss;
+    if (m_lang == Language::Arabic) {
+        ss << "صرعى الظل: " << kills
+           << " | سلامة المنارة: " << hpPercent << "%"
+           << " | مرايا باقية: " << mirrors;
+    } else {
+        ss << "Shadows Slain: " << kills
+           << " | Beacon Integrity: " << hpPercent << "%"
+           << " | Mirrors Intact: " << mirrors;
+    }
+    return ss.str();
+}
+
+std::string Localization::getDawnSummaryBounty(int wood, int crystals, int oil, int cores, int salves) const {
+    std::ostringstream ss;
+    if (m_lang == Language::Arabic) {
+        ss << "الغنائم: +" << wood << " خشب | +" << crystals << " بلورات | +" << oil << " وقود";
+        if (cores > 0) ss << " | +" << cores << " أنوية أثرية";
+        if (salves > 0) ss << " | +" << salves << " مراهم";
+    } else {
+        ss << "Bounty: +" << wood << " Wood | +" << crystals << " Crystals | +" << oil << " Oil";
+        if (cores > 0) ss << " | +" << cores << " Relic Core";
+        if (salves > 0) ss << " | +" << salves << " Salve";
+    }
+    return ss.str();
+}
+
+std::string Localization::getLighthouseAttackWarning() const {
+    return (m_lang == Language::Arabic) ? "تحت الهجوم!" : "UNDER ATTACK!";
 }
 
 std::string Localization::getInventoryText(int wood, int crystals, int oil, int mirrors, int cores, int salves) const {

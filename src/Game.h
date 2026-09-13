@@ -7,6 +7,7 @@
 #include "Localization.h"
 #include "UIManager.h"
 #include "InputHandler.h"
+#include "DayNightManager.h"
 #include <SDL2/SDL.h>
 #include <vector>
 #include <string>
@@ -34,6 +35,8 @@ public:
     GameState getState() const { return m_state; }
     void setState(GameState state) { m_state = state; }
     void quit() { m_running = false; }
+    int getDayNumber() const { return m_dayNight.getDayNumber(); }
+    DayPhase getPhase() const { return m_dayNight.getPhase(); }
 
     // State Navigation Actions
     void pauseGame() { m_state = GameState::Paused; }
@@ -95,15 +98,8 @@ private:
     std::vector<PlacedMirror> m_mirrors;
     std::vector<ItemDrop> m_drops;
 
-    // Day/Night Cycle
-    int m_dayNumber = 1;
-    DayPhase m_phase = DayPhase::Day;
-    float m_phaseTimer = 0.0f;
-    float m_dayDuration = 60.0f;
-    float m_duskDuration = 12.0f;
-    float m_nightDuration = 55.0f;
-    float m_dawnDuration = 10.0f;
-    float m_spawnTimer = 0.0f;
+    // Day/Night & Wave Progression Subsystem
+    DayNightManager m_dayNight;
 
     // Camera
     Vec2 m_cameraPos{ 1300.0f - WINDOW_WIDTH * 0.5f, 1000.0f - WINDOW_HEIGHT * 0.5f };

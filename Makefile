@@ -11,6 +11,8 @@ SRC = src/main.cpp \
       src/Lighthouse.cpp \
       src/UIManager.cpp \
       src/InputHandler.cpp \
+      src/WaveManager.cpp \
+      src/DayNightManager.cpp \
       src/Game.cpp
 
 OBJ = $(SRC:.cpp=.o)

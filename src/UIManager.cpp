@@ -120,13 +120,7 @@ void UIManager::renderHUD(
     const Player& player,
     const Lighthouse& lighthouse,
     const IslandMap& map,
-    int dayNumber,
-    DayPhase phase,
-    float phaseTimer,
-    float dayDuration,
-    float duskDuration,
-    float nightDuration,
-    float dawnDuration
+    const DayNightManager& dayNight
 ) {
     if (!m_renderer) return;
 
@@ -160,6 +154,14 @@ void UIManager::renderHUD(
     SDL_Rect lhpFg{ 350, 24, static_cast<int>(110 * lhpRatio), 14 };
     SDL_RenderFillRect(m_renderer, &lhpFg);
 
+    // Lighthouse Under Attack Alert
+    if (dayNight.isLighthouseUnderAttack()) {
+        SDL_SetRenderDrawColor(m_renderer, 255, 60, 60, 255);
+        SDL_RenderDrawRect(m_renderer, &lhpBg);
+        std::string atkLabel = Localization::instance().getLighthouseAttackWarning();
+        drawText(atkLabel, 350, 4, { 255, 80, 80, 255 }, FontSize::Small);
+    }
+
     // Fuel Bar
     float fuelRatio = lighthouse.getFuel() / lighthouse.getMaxFuel();
     std::string fuelLabel = Localization::instance().get("FUEL");
@@ -171,18 +173,18 @@ void UIManager::renderHUD(
     SDL_Rect fuelFg{ 530, 24, static_cast<int>(85 * fuelRatio), 14 };
     SDL_RenderFillRect(m_renderer, &fuelFg);
 
-    // Day & Phase Clock
-    float pDuration = dayDuration;
-    if (phase == DayPhase::Dusk) pDuration = duskDuration;
-    else if (phase == DayPhase::Night) pDuration = nightDuration;
-    else if (phase == DayPhase::Dawn) pDuration = dawnDuration;
+    // Day & Phase & Wave Clock
+    DayPhase phase = dayNight.getPhase();
+    int dayNumber = dayNight.getDayNumber();
+    int timeLeft = dayNight.getTimeLeft();
+    int curWave = dayNight.getWaveManager().getCurrentWave();
+    int totalWaves = dayNight.getWaveManager().getTotalWaves();
 
-    int timeLeft = std::max(0, static_cast<int>(pDuration - phaseTimer));
-    std::string clockStr = Localization::instance().getClockText(dayNumber, phase, timeLeft);
+    std::string clockStr = Localization::instance().getClockText(dayNumber, phase, timeLeft, curWave, totalWaves);
     SDL_Color phaseCol{ 255, 220, 90, 255 };
-    if (phase == DayPhase::Dusk) phaseCol = { 255, 130, 50, 255 };
-    else if (phase == DayPhase::Night) phaseCol = { 210, 90, 255, 255 };
-    else if (phase == DayPhase::Dawn) phaseCol = { 100, 225, 255, 255 };
+    if (phase == DayPhase::Dusk) phaseCol = { 255, 140, 50, 255 };
+    else if (phase == DayPhase::Night) phaseCol = { 220, 110, 255, 255 };
+    else if (phase == DayPhase::Dawn) phaseCol = { 110, 235, 255, 255 };
 
     drawText(clockStr, 630, 18, phaseCol, FontSize::Medium);
 
@@ -206,17 +208,53 @@ void UIManager::renderHUD(
     std::string controls = Localization::instance().getControlsText();
     drawText(controls, 25, WINDOW_HEIGHT - 38, { 205, 215, 230, 255 }, FontSize::Small);
 
-    // 3. Status Notification Banner
+    int notifY = 86;
+
+    // 3. Wave Incoming Announcement Banner
+    if (dayNight.getWaveManager().getWaveBannerTimer() > 0.0f) {
+        int bannerW = 620;
+        SDL_SetRenderDrawColor(m_renderer, 30, 15, 25, 240);
+        SDL_Rect waveBanner{ WINDOW_WIDTH / 2 - bannerW / 2, notifY, bannerW, 38 };
+        SDL_RenderFillRect(m_renderer, &waveBanner);
+        SDL_SetRenderDrawColor(m_renderer, 255, 80, 60, 255);
+        SDL_RenderDrawRect(m_renderer, &waveBanner);
+
+        std::string waveMsg = Localization::instance().getWaveBannerText(
+            dayNight.getWaveManager().getCurrentWave(),
+            dayNight.getWaveManager().getTotalWaves(),
+            dayNight.getWaveManager().isBossWave()
+        );
+        drawText(waveMsg, WINDOW_WIDTH / 2 - bannerW / 2 + 15, notifY + 8, { 255, 230, 130, 255 }, FontSize::Small);
+        notifY += 44;
+    }
+
+    // 4. Dawn Reward Summary Card
+    if (dayNight.hasDawnReward()) {
+        const DawnReward& r = dayNight.getLastDawnReward();
+        int cardW = 640;
+        int cardH = 68;
+        SDL_SetRenderDrawColor(m_renderer, 15, 25, 40, 240);
+        SDL_Rect rewardCard{ WINDOW_WIDTH / 2 - cardW / 2, notifY, cardW, cardH };
+        SDL_RenderFillRect(m_renderer, &rewardCard);
+        SDL_SetRenderDrawColor(m_renderer, 255, 215, 80, 255);
+        SDL_RenderDrawRect(m_renderer, &rewardCard);
+
+        drawText(Localization::instance().getDawnSummaryTitle(), WINDOW_WIDTH / 2 - cardW / 2 + 15, notifY + 6, { 255, 230, 110, 255 }, FontSize::Small);
+        drawText(Localization::instance().getDawnSummaryStats(r.enemiesDefeated, static_cast<int>(r.lighthouseHpPercent), r.mirrorsPreserved), WINDOW_WIDTH / 2 - cardW / 2 + 15, notifY + 26, { 200, 225, 255, 255 }, FontSize::Small);
+        drawText(Localization::instance().getDawnSummaryBounty(r.wood, r.crystals, r.oil, r.relicCores, r.salves), WINDOW_WIDTH / 2 - cardW / 2 + 15, notifY + 46, { 255, 245, 160, 255 }, FontSize::Small);
+        notifY += cardH + 6;
+    }
+
+    // 5. Status Notification Banner
     if (m_statusMessageTimer > 0.0f) {
         SDL_SetRenderDrawColor(m_renderer, 10, 15, 25, 235);
-        SDL_Rect notif{ WINDOW_WIDTH / 2 - 340, 86, 680, 42 };
+        SDL_Rect notif{ WINDOW_WIDTH / 2 - 340, notifY, 680, 38 };
         SDL_RenderFillRect(m_renderer, &notif);
         SDL_SetRenderDrawColor(m_renderer, 240, 190, 60, 255);
         SDL_RenderDrawRect(m_renderer, &notif);
 
-        // Center text in notification banner
         int tx = WINDOW_WIDTH / 2 - 310;
-        drawText(m_statusMessage, tx, 94, { 255, 240, 160, 255 }, FontSize::Small);
+        drawText(m_statusMessage, tx, notifY + 8, { 255, 240, 160, 255 }, FontSize::Small);
     }
 }
 

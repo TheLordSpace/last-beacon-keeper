@@ -445,105 +445,22 @@ void Game::restartGame() {
     m_mirrors.clear();
     PlacedMirror im1; im1.id = 1; im1.pos = Vec2(1100.0f, 1020.0f); im1.angle = -PI * 0.25f;
     m_mirrors.push_back(im1);
-    m_dayNumber = 1;
-    m_phase = DayPhase::Day;
-    m_phaseTimer = 0.0f;
+    m_dayNight.resetGame();
     m_state = GameState::Playing;
     setStatus(Localization::instance().isArabic() ? "أشرق يوم جديد. احمِ شعلة المنارة!" : "A new dawn arrives. Defend the Beacon!", 4.0f);
 }
 
 void Game::updateDayNight(float dt) {
-    m_phaseTimer += dt;
-
-    switch (m_phase) {
-    case DayPhase::Day:
-        if (m_phaseTimer >= m_dayDuration) {
-            m_phase = DayPhase::Dusk;
-            m_phaseTimer = 0.0f;
-            AudioManager::instance().playSound(SoundID::NightAlarm, 0.8f);
-            setStatus(Localization::instance().get("MSG_DUSK"), 5.0f);
-        }
-        break;
-
-    case DayPhase::Dusk:
-        if (m_phaseTimer >= m_duskDuration) {
-            m_phase = DayPhase::Night;
-            m_phaseTimer = 0.0f;
-            AudioManager::instance().setMusicNight(true);
-            setStatus(Localization::instance().get("MSG_NIGHT"), 5.0f);
-        }
-        break;
-
-    case DayPhase::Night:
-        spawnNightEnemies(dt);
-        if (m_phaseTimer >= m_nightDuration) {
-            m_phase = DayPhase::Dawn;
-            m_phaseTimer = 0.0f;
-            AudioManager::instance().playSound(SoundID::DawnChime, 1.0f);
-            AudioManager::instance().setMusicNight(false);
-            for (auto& e : m_enemies) {
-                e.takeDamage(9999.0f, true);
-            }
-            setStatus(Localization::instance().get("MSG_DAWN"), 5.0f);
-        }
-        break;
-
-    case DayPhase::Dawn:
-        if (m_phaseTimer >= m_dawnDuration) {
-            m_phase = DayPhase::Day;
-            m_phaseTimer = 0.0f;
-            m_dayNumber++;
-            m_player.wood += 6;
-            m_player.crystals += 6;
-            m_player.oil += 10;
-
-            bool isAr = Localization::instance().isArabic();
-            std::string msg = isAr ? ("اليوم " + std::to_string(m_dayNumber) + ": اجمع الموارد وحصن دفاعاتك.") :
-                                     ("Day " + std::to_string(m_dayNumber) + ": Gather resources and prepare defenses.");
-            setStatus(msg, 5.0f);
-
-            if (m_map.getIgnitedAltarsCount() >= 3 && m_dayNumber >= 4) {
-                m_state = GameState::Victory;
-                AudioManager::instance().playSound(SoundID::DawnChime, 1.0f);
-            }
-        }
-        break;
+    std::string statusMsg;
+    float statusTime = 0.0f;
+    m_dayNight.update(dt, m_enemies, m_mirrors, m_lighthouse, m_player, m_map, m_state, statusMsg, statusTime);
+    if (!statusMsg.empty()) {
+        setStatus(statusMsg, statusTime);
     }
 }
 
 void Game::spawnNightEnemies(float dt) {
-    m_spawnTimer += dt;
-    float spawnInterval = std::max(1.2f, 3.5f - m_dayNumber * 0.45f);
-
-    if (m_spawnTimer >= spawnInterval) {
-        m_spawnTimer = 0.0f;
-
-        float angle = (float)(rand() % 360) * (PI / 180.0f);
-        Vec2 spawnPos = Vec2(1300.0f, 1000.0f) + Vec2::fromAngle(angle, 800.0f);
-
-        EnemyType t = EnemyType::Crawler;
-        int roll = rand() % 100;
-        if (m_dayNumber >= 2 && roll < 35) {
-            t = EnemyType::Eater;
-        } else if (m_dayNumber >= 3 && roll < 20) {
-            t = EnemyType::Brute;
-        }
-
-        if (m_dayNumber >= 4 && m_phaseTimer > 15.0f && m_phaseTimer < 18.0f) {
-            bool hasBoss = false;
-            for (auto& e : m_enemies) {
-                if (e.getType() == EnemyType::Leviathan) hasBoss = true;
-            }
-            if (!hasBoss) {
-                t = EnemyType::Leviathan;
-                setStatus(Localization::instance().get("MSG_BOSS"), 6.0f);
-                AudioManager::instance().playSound(SoundID::NightAlarm, 1.0f);
-            }
-        }
-
-        m_enemies.emplace_back(t, spawnPos);
-        ParticleSystem::instance().spawnShadowBurst(spawnPos, 12);
-    }
+    (void)dt;
 }
 
 void Game::update(float dt) {
@@ -590,9 +507,11 @@ void Game::update(float dt) {
 
         if ((it->getPos() - m_lighthouse.getPos()).length() < (it->getRadius() + 45.0f)) {
             m_lighthouse.takeDamage(it->getDamage() * dt * 0.8f);
+            m_dayNight.notifyLighthouseHurt();
         }
 
         if (it->isDead()) {
+            m_dayNight.notifyEnemyKilled();
             int dropRoll = rand() % 100;
             if (dropRoll < 40) m_player.crystals += 1;
             if (dropRoll > 80) m_player.oil += 1;
@@ -693,19 +612,8 @@ void Game::renderLightingPass() {
 
     SDL_SetRenderTarget(m_renderer, m_lightTexture);
 
-    uint8_t darkness = 0;
-    if (m_phase == DayPhase::Day) {
-        darkness = 18;
-    } else if (m_phase == DayPhase::Dusk) {
-        darkness = static_cast<uint8_t>(18 + (m_phaseTimer / m_duskDuration) * 202.0f);
-    } else if (m_phase == DayPhase::Night) {
-        darkness = 238;
-    } else if (m_phase == DayPhase::Dawn) {
-        darkness = static_cast<uint8_t>(238 - (m_phaseTimer / m_dawnDuration) * 220.0f);
-    }
-
-    // Base ambient darkness
-    SDL_SetRenderDrawColor(m_renderer, 255 - darkness, 255 - darkness, std::max(20, 255 - darkness), 255);
+    ColorRGBA ambient = m_dayNight.getAmbientColor();
+    SDL_SetRenderDrawColor(m_renderer, ambient.r, ambient.g, ambient.b, ambient.a);
     SDL_RenderClear(m_renderer);
 
     SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_ADD);
@@ -792,13 +700,7 @@ void Game::render() {
         m_player,
         m_lighthouse,
         m_map,
-        m_dayNumber,
-        m_phase,
-        m_phaseTimer,
-        m_dayDuration,
-        m_duskDuration,
-        m_nightDuration,
-        m_dawnDuration
+        m_dayNight
     );
 
     if (m_state == GameState::Workshop) {
