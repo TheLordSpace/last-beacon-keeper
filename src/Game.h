@@ -6,6 +6,7 @@
 #include "Lighthouse.h"
 #include "Localization.h"
 #include "UIManager.h"
+#include "InputHandler.h"
 #include <SDL2/SDL.h>
 #include <vector>
 #include <string>
@@ -29,6 +30,50 @@ public:
     void run();
     void cleanup();
 
+    // State & Lifecycle
+    GameState getState() const { return m_state; }
+    void setState(GameState state) { m_state = state; }
+    void quit() { m_running = false; }
+
+    // State Navigation Actions
+    void pauseGame() { m_state = GameState::Paused; }
+    void resumeGame() { m_state = GameState::Playing; }
+    void openSettings() { m_state = GameState::Settings; }
+    void closeSettings() { m_state = GameState::Playing; }
+    void openJournal() { m_state = GameState::Journal; }
+    void closeJournal() { m_state = GameState::Playing; }
+    void closeWorkshop() { m_state = GameState::Playing; }
+
+    // Display & System Actions
+    void toggleFullscreen();
+    void takeScreenshot();
+    void toggleLanguage();
+
+    // Gameplay Actions
+    void placeMirror();
+    void rotateNearbyMirror();
+    void interactNearby();
+    void playerDash();
+    void useHealingSalve();
+    void selectLens(LensType type);
+    void toggleMannedLighthouse();
+    void playerAttack();
+
+    // Settings Navigation & Input
+    void settingsNavigateUp();
+    void settingsNavigateDown();
+    void settingsAdjustLeft();
+    void settingsConfirmOrRight();
+    void settingsClick();
+
+    // Workshop Navigation & Input
+    void workshopNavigateUp();
+    void workshopNavigateDown();
+    void workshopConfirm();
+
+    // Game Reset
+    void restartGame();
+
 private:
     SDL_Window* m_window = nullptr;
     SDL_Renderer* m_renderer = nullptr;
@@ -38,8 +83,9 @@ private:
     bool m_running = true;
     GameState m_state = GameState::Playing;
 
-    // UI and HUD Subsystem
+    // Subsystems
     UIManager m_ui;
+    InputHandler m_inputHandler;
 
     // Game Objects
     IslandMap m_map;
@@ -68,10 +114,7 @@ private:
     int m_soundVolumePercent = 70;
     bool m_fullscreen = false;
 
-    void toggleFullscreen();
-
     // Methods
-    void processEvents();
     void update(float dt);
     void render();
 
@@ -84,8 +127,5 @@ private:
     void drawCircleLight(SDL_Renderer* ren, int cx, int cy, int radius, uint8_t alpha);
     void setStatus(const std::string& msg, float time = 3.0f) { m_ui.setStatus(msg, time); }
 
-    void placeMirror();
-    void rotateNearbyMirror();
-    void interactNearby();
     void buyWorkshopItem(int index);
 };

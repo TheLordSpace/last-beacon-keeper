@@ -307,208 +307,132 @@ void Game::buyWorkshopItem(int index) {
     }
 }
 
-void Game::processEvents() {
-    SDL_Event e;
-    while (SDL_PollEvent(&e)) {
-        if (e.type == SDL_QUIT) {
-            m_running = false;
-        } else if (e.type == SDL_KEYDOWN) {
-            if (m_state == GameState::Playing) {
-                switch (e.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    m_state = GameState::Paused;
-                    break;
-                case SDLK_o:
-                    m_state = GameState::Settings;
-                    break;
-                case SDLK_l:
-                    // Quick toggle language key
-                    Localization::instance().toggleLanguage();
-                    setStatus(Localization::instance().isArabic() ? "تم تغيير اللغة إلى العربية" : "Language switched to English", 2.0f);
-                    break;
-                case SDLK_TAB:
-                case SDLK_m:
-                    m_state = GameState::Journal;
-                    break;
-                case SDLK_e:
-                    interactNearby();
-                    break;
-                case SDLK_f:
-                case SDLK_c:
-                    placeMirror();
-                    break;
-                case SDLK_r:
-                    rotateNearbyMirror();
-                    break;
-                case SDLK_SPACE:
-                    m_player.tryDash();
-                    break;
-                case SDLK_h:
-                    if (m_player.salves > 0 && m_player.getHealth() < m_player.getMaxHealth()) {
-                        m_player.salves--;
-                        m_player.heal(50.0f);
-                        AudioManager::instance().playSound(SoundID::DawnChime, 0.5f);
-                        setStatus(Localization::instance().get("MSG_SALVE_USED"), 2.0f);
-                    }
-                    break;
-                case SDLK_1:
-                    m_lighthouse.setLens(LensType::Focused);
-                    setStatus(Localization::instance().get("MSG_LENS_FOCUSED"), 2.0f);
-                    break;
-                case SDLK_2:
-                    if (m_lighthouse.unlockWideLens) {
-                        m_lighthouse.setLens(LensType::WideAmber);
-                        setStatus(Localization::instance().get("MSG_LENS_AMBER"), 2.0f);
-                    } else {
-                        setStatus(Localization::instance().get("MSG_LENS_AMBER_LOCKED"), 2.0f);
-                    }
-                    break;
-                case SDLK_3:
-                    if (m_lighthouse.unlockUVLens) {
-                        m_lighthouse.setLens(LensType::UVPulse);
-                        setStatus(Localization::instance().get("MSG_LENS_UV"), 2.0f);
-                    } else {
-                        setStatus(Localization::instance().get("MSG_LENS_UV_LOCKED"), 2.0f);
-                    }
-                    break;
-                case SDLK_t:
-                    if ((m_lighthouse.getPos() - m_player.getPos()).length() < 90.0f) {
-                        m_lighthouse.setManned(!m_lighthouse.isManned());
-                        setStatus(m_lighthouse.isManned() ? Localization::instance().get("MSG_MANNED") : Localization::instance().get("MSG_DISMOUNTED"), 2.5f);
-                    }
-                    break;
-                case SDLK_F11:
-                    toggleFullscreen();
-                    break;
-                case SDLK_RETURN:
-                    if (e.key.keysym.mod & KMOD_ALT) {
-                        toggleFullscreen();
-                    }
-                    break;
-                case SDLK_F12: {
-                    int outW = 0, outH = 0;
-                    SDL_GetRendererOutputSize(m_renderer, &outW, &outH);
-                    SDL_Surface* sshot = SDL_CreateRGBSurfaceWithFormat(0, outW, outH, 32, SDL_PIXELFORMAT_RGBA8888);
-                    if (sshot) {
-                        SDL_Rect entireWindow{ 0, 0, outW, outH };
-                        SDL_RenderReadPixels(m_renderer, &entireWindow, SDL_PIXELFORMAT_RGBA8888, sshot->pixels, sshot->pitch);
-                        SDL_SaveBMP(sshot, "screenshot.bmp");
-                        SDL_FreeSurface(sshot);
-                        setStatus(Localization::instance().isArabic() ? "تم حفظ لقطة الشاشة في screenshot.bmp!" : "Screenshot saved to screenshot.bmp!", 2.5f);
-                    }
-                    break;
-                }
-                }
-            } else if (m_state == GameState::Settings) {
-                switch (e.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    m_state = GameState::Playing;
-                    break;
-                case SDLK_F11:
-                    toggleFullscreen();
-                    break;
-                case SDLK_w:
-                case SDLK_UP:
-                    m_settingsSelected = (m_settingsSelected - 1 + 4) % 4;
-                    break;
-                case SDLK_s:
-                case SDLK_DOWN:
-                    m_settingsSelected = (m_settingsSelected + 1) % 4;
-                    break;
-                case SDLK_a:
-                case SDLK_LEFT:
-                case SDLK_d:
-                case SDLK_RIGHT:
-                case SDLK_RETURN:
-                case SDLK_SPACE:
-                    if (m_settingsSelected == 0) {
-                        // Toggle language
-                        Localization::instance().toggleLanguage();
-                    } else if (m_settingsSelected == 1) {
-                        // Toggle Fullscreen
-                        toggleFullscreen();
-                    } else if (m_settingsSelected == 2) {
-                        // Adjust volume
-                        if (e.key.keysym.sym == SDLK_LEFT || e.key.keysym.sym == SDLK_a) {
-                            m_soundVolumePercent = std::max(0, m_soundVolumePercent - 10);
-                        } else {
-                            m_soundVolumePercent = std::min(100, m_soundVolumePercent + 10);
-                        }
-                    } else if (m_settingsSelected == 3) {
-                        m_state = GameState::Playing;
-                    }
-                    break;
-                }
-            } else if (m_state == GameState::Workshop) {
-                switch (e.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                case SDLK_e:
-                    m_state = GameState::Playing;
-                    break;
-                case SDLK_w:
-                case SDLK_UP:
-                    m_workshopSelected = (m_workshopSelected - 1 + 7) % 7;
-                    break;
-                case SDLK_s:
-                case SDLK_DOWN:
-                    m_workshopSelected = (m_workshopSelected + 1) % 7;
-                    break;
-                case SDLK_RETURN:
-                case SDLK_SPACE:
-                    buyWorkshopItem(m_workshopSelected);
-                    break;
-                }
-            } else if (m_state == GameState::Paused) {
-                if (e.key.keysym.sym == SDLK_ESCAPE || e.key.keysym.sym == SDLK_RETURN) {
-                    m_state = GameState::Playing;
-                } else if (e.key.keysym.sym == SDLK_o) {
-                    m_state = GameState::Settings;
-                }
-            } else if (m_state == GameState::Journal) {
-                if (e.key.keysym.sym == SDLK_ESCAPE || e.key.keysym.sym == SDLK_TAB || e.key.keysym.sym == SDLK_RETURN) {
-                    m_state = GameState::Playing;
-                }
-            } else if (m_state == GameState::GameOver || m_state == GameState::Victory) {
-                if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_r) {
-                    // Reset game
-                    m_map.init();
-                    m_player = Player();
-                    m_lighthouse = Lighthouse();
-                    m_enemies.clear();
-                    m_mirrors.clear();
-                    PlacedMirror im1; im1.id = 1; im1.pos = Vec2(1100.0f, 1020.0f); im1.angle = -PI * 0.25f;
-                    m_mirrors.push_back(im1);
-                    m_dayNumber = 1;
-                    m_phase = DayPhase::Day;
-                    m_phaseTimer = 0.0f;
-                    m_state = GameState::Playing;
-                    setStatus(Localization::instance().isArabic() ? "أشرق يوم جديد. احمِ شعلة المنارة!" : "A new dawn arrives. Defend the Beacon!", 4.0f);
-                }
-            }
-        } else if (e.type == SDL_MOUSEBUTTONDOWN) {
-            if (m_state == GameState::Playing) {
-                if (e.button.button == SDL_BUTTON_LEFT) {
-                    m_player.swingTool(m_map, m_enemies);
-                } else if (e.button.button == SDL_BUTTON_RIGHT) {
-                    rotateNearbyMirror();
-                }
-            } else if (m_state == GameState::Workshop) {
-                if (e.button.button == SDL_BUTTON_LEFT) {
-                    buyWorkshopItem(m_workshopSelected);
-                }
-            } else if (m_state == GameState::Settings) {
-                if (e.button.button == SDL_BUTTON_LEFT) {
-                    if (m_settingsSelected == 0) {
-                        Localization::instance().toggleLanguage();
-                    } else if (m_settingsSelected == 1) {
-                        toggleFullscreen();
-                    } else if (m_settingsSelected == 3) {
-                        m_state = GameState::Playing;
-                    }
-                }
-            }
+void Game::toggleLanguage() {
+    Localization::instance().toggleLanguage();
+    setStatus(Localization::instance().isArabic() ? "تم تغيير اللغة إلى العربية" : "Language switched to English", 2.0f);
+}
+
+void Game::takeScreenshot() {
+    int outW = 0, outH = 0;
+    SDL_GetRendererOutputSize(m_renderer, &outW, &outH);
+    SDL_Surface* sshot = SDL_CreateRGBSurfaceWithFormat(0, outW, outH, 32, SDL_PIXELFORMAT_RGBA8888);
+    if (sshot) {
+        SDL_Rect entireWindow{ 0, 0, outW, outH };
+        SDL_RenderReadPixels(m_renderer, &entireWindow, SDL_PIXELFORMAT_RGBA8888, sshot->pixels, sshot->pitch);
+        SDL_SaveBMP(sshot, "screenshot.bmp");
+        SDL_FreeSurface(sshot);
+        setStatus(Localization::instance().isArabic() ? "تم حفظ لقطة الشاشة في screenshot.bmp!" : "Screenshot saved to screenshot.bmp!", 2.5f);
+    }
+}
+
+void Game::playerDash() {
+    m_player.tryDash();
+}
+
+void Game::useHealingSalve() {
+    if (m_player.salves > 0 && m_player.getHealth() < m_player.getMaxHealth()) {
+        m_player.salves--;
+        m_player.heal(50.0f);
+        AudioManager::instance().playSound(SoundID::DawnChime, 0.5f);
+        setStatus(Localization::instance().get("MSG_SALVE_USED"), 2.0f);
+    }
+}
+
+void Game::selectLens(LensType type) {
+    if (type == LensType::Focused) {
+        m_lighthouse.setLens(LensType::Focused);
+        setStatus(Localization::instance().get("MSG_LENS_FOCUSED"), 2.0f);
+    } else if (type == LensType::WideAmber) {
+        if (m_lighthouse.unlockWideLens) {
+            m_lighthouse.setLens(LensType::WideAmber);
+            setStatus(Localization::instance().get("MSG_LENS_AMBER"), 2.0f);
+        } else {
+            setStatus(Localization::instance().get("MSG_LENS_AMBER_LOCKED"), 2.0f);
+        }
+    } else if (type == LensType::UVPulse) {
+        if (m_lighthouse.unlockUVLens) {
+            m_lighthouse.setLens(LensType::UVPulse);
+            setStatus(Localization::instance().get("MSG_LENS_UV"), 2.0f);
+        } else {
+            setStatus(Localization::instance().get("MSG_LENS_UV_LOCKED"), 2.0f);
         }
     }
+}
+
+void Game::toggleMannedLighthouse() {
+    if ((m_lighthouse.getPos() - m_player.getPos()).length() < 90.0f) {
+        m_lighthouse.setManned(!m_lighthouse.isManned());
+        setStatus(m_lighthouse.isManned() ? Localization::instance().get("MSG_MANNED") : Localization::instance().get("MSG_DISMOUNTED"), 2.5f);
+    }
+}
+
+void Game::playerAttack() {
+    m_player.swingTool(m_map, m_enemies);
+}
+
+void Game::settingsNavigateUp() {
+    m_settingsSelected = (m_settingsSelected - 1 + 4) % 4;
+}
+
+void Game::settingsNavigateDown() {
+    m_settingsSelected = (m_settingsSelected + 1) % 4;
+}
+
+void Game::settingsAdjustLeft() {
+    if (m_settingsSelected == 2) {
+        m_soundVolumePercent = std::max(0, m_soundVolumePercent - 10);
+    } else {
+        settingsConfirmOrRight();
+    }
+}
+
+void Game::settingsConfirmOrRight() {
+    if (m_settingsSelected == 0) {
+        toggleLanguage();
+    } else if (m_settingsSelected == 1) {
+        toggleFullscreen();
+    } else if (m_settingsSelected == 2) {
+        m_soundVolumePercent = std::min(100, m_soundVolumePercent + 10);
+    } else if (m_settingsSelected == 3) {
+        m_state = GameState::Playing;
+    }
+}
+
+void Game::settingsClick() {
+    if (m_settingsSelected == 0) {
+        toggleLanguage();
+    } else if (m_settingsSelected == 1) {
+        toggleFullscreen();
+    } else if (m_settingsSelected == 3) {
+        m_state = GameState::Playing;
+    }
+}
+
+void Game::workshopNavigateUp() {
+    m_workshopSelected = (m_workshopSelected - 1 + 7) % 7;
+}
+
+void Game::workshopNavigateDown() {
+    m_workshopSelected = (m_workshopSelected + 1) % 7;
+}
+
+void Game::workshopConfirm() {
+    buyWorkshopItem(m_workshopSelected);
+}
+
+void Game::restartGame() {
+    m_map.init();
+    m_player = Player();
+    m_lighthouse = Lighthouse();
+    m_enemies.clear();
+    m_mirrors.clear();
+    PlacedMirror im1; im1.id = 1; im1.pos = Vec2(1100.0f, 1020.0f); im1.angle = -PI * 0.25f;
+    m_mirrors.push_back(im1);
+    m_dayNumber = 1;
+    m_phase = DayPhase::Day;
+    m_phaseTimer = 0.0f;
+    m_state = GameState::Playing;
+    setStatus(Localization::instance().isArabic() ? "أشرق يوم جديد. احمِ شعلة المنارة!" : "A new dawn arrives. Defend the Beacon!", 4.0f);
 }
 
 void Game::updateDayNight(float dt) {
@@ -856,7 +780,7 @@ void Game::run() {
 
         if (dt > 0.05f) dt = 0.05f;
 
-        processEvents();
+        m_inputHandler.processEvents(*this);
         update(dt);
         render();
 
