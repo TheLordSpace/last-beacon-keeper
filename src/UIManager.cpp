@@ -33,30 +33,41 @@ bool UIManager::init(SDL_Renderer* renderer) {
 }
 
 void UIManager::cleanup() {
-    if (m_fontEnSmall) {
-        TTF_CloseFont(m_fontEnSmall);
-        m_fontEnSmall = nullptr;
-    }
-    if (m_fontEnMedium) {
-        TTF_CloseFont(m_fontEnMedium);
-        m_fontEnMedium = nullptr;
-    }
-    if (m_fontEnLarge) {
-        TTF_CloseFont(m_fontEnLarge);
-        m_fontEnLarge = nullptr;
-    }
+    // Collect all font pointers and distinguish owned distinct fonts from borrowed fallback aliases.
+    // Arabic fonts only own their resource if they did not fall back to English fonts.
+    TTF_Font* fontsToClose[6] = {
+        m_fontEnSmall,
+        m_fontEnMedium,
+        m_fontEnLarge,
+        (m_fontArSmall != m_fontEnSmall) ? m_fontArSmall : nullptr,
+        (m_fontArMedium != m_fontEnMedium) ? m_fontArMedium : nullptr,
+        (m_fontArLarge != m_fontEnLarge) ? m_fontArLarge : nullptr
+    };
 
-    if (m_fontArSmall && m_fontArSmall != m_fontEnSmall) {
-        TTF_CloseFont(m_fontArSmall);
-        m_fontArSmall = nullptr;
-    }
-    if (m_fontArMedium && m_fontArMedium != m_fontEnMedium) {
-        TTF_CloseFont(m_fontArMedium);
-        m_fontArMedium = nullptr;
-    }
-    if (m_fontArLarge && m_fontArLarge != m_fontEnLarge) {
-        TTF_CloseFont(m_fontArLarge);
-        m_fontArLarge = nullptr;
+    // Immediately nullify member pointers to prevent dangling access
+    m_fontEnSmall = nullptr;
+    m_fontEnMedium = nullptr;
+    m_fontEnLarge = nullptr;
+    m_fontArSmall = nullptr;
+    m_fontArMedium = nullptr;
+    m_fontArLarge = nullptr;
+
+    // Close each unique font resource exactly once
+    for (int i = 0; i < 6; ++i) {
+        TTF_Font* f = fontsToClose[i];
+        if (!f) continue;
+
+        bool duplicate = false;
+        for (int j = 0; j < i; ++j) {
+            if (fontsToClose[j] == f) {
+                duplicate = true;
+                break;
+            }
+        }
+
+        if (!duplicate) {
+            TTF_CloseFont(f);
+        }
     }
 
     TTF_Quit();
