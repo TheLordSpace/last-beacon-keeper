@@ -23,6 +23,7 @@ struct PlacedMirror {
     float health = 80.0f;
     float maxHealth = 80.0f;
     float length = 38.0f;
+    float rotateFeedbackTimer = 0.0f;
 
     Vec2 getNormal() const {
         return Vec2(-std::sin(angle), std::cos(angle));

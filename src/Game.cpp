@@ -171,8 +171,25 @@ void Game::rotateNearbyMirror() {
     if (closest) {
         closest->angle += PI * 0.25f;
         if (closest->angle >= 6.28318f) closest->angle -= 6.28318f;
+        closest->rotateFeedbackTimer = 0.22f;
+
         AudioManager::instance().playSound(SoundID::MirrorReflect, 0.5f);
-        ParticleSystem::instance().spawnSparks(closest->pos, 6, ColorRGBA{ 180, 220, 255, 255 });
+
+        // Circular sparkle ring around the rotated mirror
+        for (int i = 0; i < 10; ++i) {
+            float a = (float)i * (2.0f * PI / 10.0f);
+            Vec2 dir = Vec2::fromAngle(a);
+            Vec2 pos = closest->pos + dir * 14.0f;
+            Vec2 vel = dir * 40.0f;
+            ColorRGBA col{ 180, 235, 255, 240 };
+            ParticleSystem::instance().spawn(pos, vel, col, 0.22f, 2.5f, true);
+        }
+
+        // Endpoint sparks indicating newly aligned reflective surface
+        Vec2 p1, p2;
+        closest->getEndpoints(p1, p2);
+        ParticleSystem::instance().spawnSparks(p1, 3, ColorRGBA{ 210, 245, 255, 255 });
+        ParticleSystem::instance().spawnSparks(p2, 3, ColorRGBA{ 210, 245, 255, 255 });
     }
 }
 
@@ -553,6 +570,9 @@ void Game::update(float dt) {
     m_lighthouse.update(dt, m_enemies, m_mirrors);
 
     for (auto it = m_mirrors.begin(); it != m_mirrors.end(); ) {
+        if (it->rotateFeedbackTimer > 0.0f) {
+            it->rotateFeedbackTimer -= dt;
+        }
         if (it->health <= 0.0f) {
             ParticleSystem::instance().spawnSparks(it->pos, 15, ColorRGBA{ 220, 220, 240, 255 });
             it = m_mirrors.erase(it);
@@ -620,23 +640,50 @@ void Game::renderMirrors() {
         float x2 = p2.x - m_cameraPos.x;
         float y2 = p2.y - m_cameraPos.y;
 
+        bool inFeedback = (m.rotateFeedbackTimer > 0.0f);
+
         SDL_SetRenderDrawColor(m_renderer, 15, 20, 25, 100);
         SDL_Rect shadow{ (int)sx - 12, (int)sy + 6, 24, 8 };
         SDL_RenderFillRect(m_renderer, &shadow);
+
+        // Pedestal glow when rotating
+        if (inFeedback) {
+            SDL_SetRenderDrawColor(m_renderer, 140, 215, 255, 255);
+            SDL_Rect pedGlow{ (int)sx - 8, (int)sy - 8, 16, 16 };
+            SDL_RenderDrawRect(m_renderer, &pedGlow);
+        }
 
         SDL_SetRenderDrawColor(m_renderer, 70, 75, 85, 255);
         SDL_Rect ped{ (int)sx - 6, (int)sy - 6, 12, 12 };
         SDL_RenderFillRect(m_renderer, &ped);
 
-        SDL_SetRenderDrawColor(m_renderer, 220, 180, 80, 255);
+        // Brass Frame (flashes bright gold during feedback)
+        if (inFeedback) {
+            SDL_SetRenderDrawColor(m_renderer, 255, 235, 130, 255);
+        } else {
+            SDL_SetRenderDrawColor(m_renderer, 220, 180, 80, 255);
+        }
         SDL_RenderDrawLine(m_renderer, (int)x1 - 1, (int)y1 - 1, (int)x2 - 1, (int)y2 - 1);
         SDL_RenderDrawLine(m_renderer, (int)x1 + 1, (int)y1 + 1, (int)x2 + 1, (int)y2 + 1);
 
-        SDL_SetRenderDrawColor(m_renderer, 180, 240, 255, 255);
+        // Reflective Surface (flashes bright white during feedback)
+        if (inFeedback) {
+            SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+        } else {
+            SDL_SetRenderDrawColor(m_renderer, 180, 240, 255, 255);
+        }
         SDL_RenderDrawLine(m_renderer, (int)x1, (int)y1, (int)x2, (int)y2);
 
-        Vec2 norm = m.getNormal() * 12.0f;
-        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 180);
+        // Normal direction indicator (extended and brightened on rotate to show new facing angle clearly)
+        float normLen = inFeedback ? 20.0f : 12.0f;
+        Vec2 norm = m.getNormal() * normLen;
+        if (inFeedback) {
+            SDL_SetRenderDrawColor(m_renderer, 220, 250, 255, 255);
+            SDL_RenderDrawLine(m_renderer, (int)sx - 1, (int)sy, (int)(sx + norm.x) - 1, (int)(sy + norm.y));
+            SDL_RenderDrawLine(m_renderer, (int)sx + 1, (int)sy, (int)(sx + norm.x) + 1, (int)(sy + norm.y));
+        } else {
+            SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 180);
+        }
         SDL_RenderDrawLine(m_renderer, (int)sx, (int)sy, (int)(sx + norm.x), (int)(sy + norm.y));
     }
 }
